@@ -25,7 +25,7 @@ class SignInScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(height: 24.h),
+                  SizedBox(height: 20.h),
 
                   /// Brand Gas Station Icon
                   Container(
@@ -73,7 +73,7 @@ class SignInScreen extends StatelessWidget {
                       color: const Color(0xFF6B7280),
                     ),
                   ),
-                  SizedBox(height: 32.h),
+                  SizedBox(height: 28.h),
 
                   /// Tab Toggle: Sign In / Sign Up
                   Obx(() => Container(
@@ -147,7 +147,7 @@ class SignInScreen extends StatelessWidget {
                           ],
                         ),
                       )),
-                  SizedBox(height: 28.h),
+                  SizedBox(height: 24.h),
 
                   /// Dynamic Content based on selected tab
                   Obx(() {
@@ -308,11 +308,46 @@ class SignInScreen extends StatelessWidget {
     );
   }
 
-  /// Sign Up Form (Smooth toggle)
+  /// Sign Up Form matching screenshot with Role Selection (Employee / Driver)
   Widget _buildSignUpForm(SignInController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        /// Role Selection Header
+        Text(
+          'Select Role',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+
+        /// Role Selection Cards (Employee vs Driver)
+        Obx(() => Row(
+              children: [
+                Expanded(
+                  child: _buildRoleCard(
+                    title: 'Employee',
+                    icon: Icons.badge_outlined,
+                    isSelected: controller.selectedRole.value == 'Employee',
+                    onTap: () => controller.selectRole('Employee'),
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: _buildRoleCard(
+                    title: 'Driver',
+                    icon: Icons.delivery_dining_outlined,
+                    isSelected: controller.selectedRole.value == 'Driver',
+                    onTap: () => controller.selectRole('Driver'),
+                  ),
+                ),
+              ],
+            )),
+        SizedBox(height: 18.h),
+
         /// Full Name
         Text(
           'Full Name',
@@ -330,7 +365,7 @@ class SignInScreen extends StatelessWidget {
             fontSize: 14.sp,
             color: const Color(0xFF111827),
           ),
-          decoration: _inputDecoration(hintText: 'John Doe'),
+          decoration: _inputDecoration(hintText: 'Jordan Smith'),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Please enter your full name';
@@ -387,7 +422,13 @@ class SignInScreen extends StatelessWidget {
             fontSize: 14.sp,
             color: const Color(0xFF111827),
           ),
-          decoration: _inputDecoration(hintText: '+1 (555) 000-0000'),
+          decoration: _inputDecoration(hintText: '(555) 123-4567'),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your phone number';
+            }
+            return null;
+          },
         ),
         SizedBox(height: 18.h),
 
@@ -431,51 +472,9 @@ class SignInScreen extends StatelessWidget {
                 return null;
               },
             )),
-        SizedBox(height: 18.h),
-
-        /// Confirm Password
-        Text(
-          'Confirm Password',
-          style: GoogleFonts.poppins(
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF1F2937),
-          ),
-        ),
-        SizedBox(height: 8.h),
-        Obx(() => TextFormField(
-              controller: controller.confirmPasswordController,
-              obscureText: controller.isConfirmPasswordHidden.value,
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
-                color: const Color(0xFF111827),
-              ),
-              decoration: _inputDecoration(
-                hintText: '••••••••',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    controller.isConfirmPasswordHidden.value
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: const Color(0xFF9CA3AF),
-                    size: 20.sp,
-                  ),
-                  onPressed: controller.toggleConfirmPasswordVisibility,
-                ),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please confirm your password';
-                }
-                if (value != controller.passwordController.text) {
-                  return 'Passwords do not match';
-                }
-                return null;
-              },
-            )),
         SizedBox(height: 28.h),
 
-        /// Sign Up Button
+        /// Create Account Button
         Obx(() => SizedBox(
               width: double.infinity,
               height: 50.h,
@@ -503,7 +502,7 @@ class SignInScreen extends StatelessWidget {
                         ),
                       )
                     : Text(
-                        'Sign Up',
+                        'Create Account',
                         style: GoogleFonts.poppins(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -513,6 +512,66 @@ class SignInScreen extends StatelessWidget {
               ),
             )),
       ],
+    );
+  }
+
+  /// Reusable Role Selection Card
+  Widget _buildRoleCard({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryColor.withValues(alpha: 0.08)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryColor
+                : const Color(0xFFE5E7EB),
+            width: isSelected ? 1.8 : 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 20.sp,
+              color: isSelected
+                  ? AppColors.primaryColor
+                  : const Color(0xFF6B7280),
+            ),
+            SizedBox(width: 8.w),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? AppColors.primaryColor
+                    : const Color(0xFF4B5563),
+              ),
+            ),
+            if (isSelected) ...[
+              SizedBox(width: 6.w),
+              Icon(
+                Icons.check_circle_rounded,
+                size: 16.sp,
+                color: AppColors.primaryColor,
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

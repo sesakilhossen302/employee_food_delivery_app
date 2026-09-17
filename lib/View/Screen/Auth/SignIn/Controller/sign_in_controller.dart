@@ -9,6 +9,9 @@ class SignInController extends GetxController {
   /// 0 = Sign In, 1 = Sign Up
   final RxInt selectedTab = 0.obs;
 
+  /// Role selection for Sign Up: 'Employee' or 'Driver'
+  final RxString selectedRole = 'Employee'.obs;
+
   /// Controllers
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -16,11 +19,9 @@ class SignInController extends GetxController {
   /// Sign Up specific controllers
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
 
   /// Visibility states
   final RxBool isPasswordHidden = true.obs;
-  final RxBool isConfirmPasswordHidden = true.obs;
 
   /// Loading state
   final RxBool isLoading = false.obs;
@@ -30,12 +31,12 @@ class SignInController extends GetxController {
     formKey.currentState?.reset();
   }
 
-  void togglePasswordVisibility() {
-    isPasswordHidden.value = !isPasswordHidden.value;
+  void selectRole(String role) {
+    selectedRole.value = role;
   }
 
-  void toggleConfirmPasswordVisibility() {
-    isConfirmPasswordHidden.value = !isConfirmPasswordHidden.value;
+  void togglePasswordVisibility() {
+    isPasswordHidden.value = !isPasswordHidden.value;
   }
 
   Future<void> handleSignIn() async {
@@ -52,7 +53,7 @@ class SignInController extends GetxController {
       );
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Sign in failed: ',
+        msg: 'Sign in failed: ' + e.toString(),
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -64,27 +65,18 @@ class SignInController extends GetxController {
   Future<void> handleSignUp() async {
     if (!formKey.currentState!.validate()) return;
 
-    if (passwordController.text != confirmPasswordController.text) {
-      Fluttertoast.showToast(
-        msg: 'Passwords do not match!',
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-      );
-      return;
-    }
-
     isLoading.value = true;
     try {
       await Future.delayed(const Duration(milliseconds: 1200));
       Fluttertoast.showToast(
-        msg: 'Account created successfully!',
+        msg: 'Account created as ' + selectedRole.value + ' successfully!',
         backgroundColor: AppColors.primaryColor,
         textColor: Colors.white,
       );
       selectedTab.value = 0;
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Sign up failed: ',
+        msg: 'Sign up failed: ' + e.toString(),
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -96,7 +88,9 @@ class SignInController extends GetxController {
   void handleForgotPassword() {
     final email = emailController.text.trim();
     Fluttertoast.showToast(
-      msg: email.isNotEmpty ? 'Reset password link sent to ' : 'Reset password link sent to your email',
+      msg: email.isNotEmpty
+          ? ('Reset password link sent to ' + email)
+          : 'Reset password link sent to your email',
       backgroundColor: AppColors.primaryColor,
       textColor: Colors.white,
     );
@@ -108,7 +102,6 @@ class SignInController extends GetxController {
     passwordController.dispose();
     nameController.dispose();
     phoneController.dispose();
-    confirmPasswordController.dispose();
     super.onClose();
   }
 }
