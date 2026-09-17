@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
+import '../Nav/Controller/employee_nav_controller.dart';
 import 'Controller/employee_home_controller.dart';
 import 'Model/employee_home_models.dart';
 
@@ -66,7 +67,6 @@ class EmployeeHomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(controller),
     );
   }
 
@@ -125,7 +125,11 @@ class EmployeeHomeScreen extends StatelessWidget {
 
           /// Profile Avatar Circle ('C')
           GestureDetector(
-            onTap: () => controller.changeNavIndex(4),
+            onTap: () {
+              if (Get.isRegistered<EmployeeNavController>()) {
+                Get.find<EmployeeNavController>().changeNavIndex(4);
+              }
+            },
             child: Container(
               width: 42.w,
               height: 42.w,
@@ -712,140 +716,6 @@ class EmployeeHomeScreen extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  /// --------------------------------------------------------------------------
-  /// BOTTOM NAVIGATION BAR
-  /// --------------------------------------------------------------------------
-  Widget _buildBottomNavigationBar(EmployeeHomeController controller) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 62.h,
-          child: Obx(
-            () => Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  index: 0,
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  index: 1,
-                  icon: Icons.search_rounded,
-                  label: 'Browse',
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  index: 2,
-                  icon: Icons.shopping_cart_outlined,
-                  label: 'Cart',
-                  controller: controller,
-                  badgeCount: controller.cartCount.value,
-                ),
-                _buildNavItem(
-                  index: 3,
-                  icon: Icons.access_time_rounded,
-                  label: 'Orders',
-                  controller: controller,
-                ),
-                _buildNavItem(
-                  index: 4,
-                  icon: Icons.person_outline_rounded,
-                  label: 'Account',
-                  controller: controller,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required int index,
-    required IconData icon,
-    required String label,
-    required EmployeeHomeController controller,
-    int badgeCount = 0,
-  }) {
-    final isSelected = controller.currentNavIndex.value == index;
-
-    return Expanded(
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => controller.changeNavIndex(index),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            /// Active Top Indicator Line
-            Container(
-              height: 3.h,
-              width: 32.w,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryAmber : Colors.transparent,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(3.r)),
-              ),
-            ),
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  icon,
-                  size: 24.sp,
-                  color: isSelected ? AppColors.primaryAmber : const Color(0xFF9CA3AF),
-                ),
-                if (badgeCount > 0)
-                  Positioned(
-                    right: -8.w,
-                    top: -4.h,
-                    child: Container(
-                      padding: EdgeInsets.all(4.w),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
-                      child: Text(
-                        badgeCount > 99 ? '99+' : badgeCount.toString(),
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 9.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 11.sp,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? AppColors.primaryAmber : const Color(0xFF9CA3AF),
-              ),
-            ),
-            SizedBox(height: 4.h),
-          ],
-        ),
-      ),
     );
   }
 }

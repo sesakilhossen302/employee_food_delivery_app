@@ -1,175 +1,153 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:flutter_svg/flutter_svg.dart';
-// import 'package:get/get.dart';
-//
-// import '../../../Utils/AppColors/app_colors.dart' show AppColors;
-// import '../../../Utils/AppIcons/app_icons.dart';
-//
-//
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../Utils/AppColors/app_colors.dart';
 
+class NavBarItem {
+  final IconData selectedIcon;
+  final IconData unselectedIcon;
+  final String label;
 
-//final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  const NavBarItem({
+    required this.selectedIcon,
+    required this.unselectedIcon,
+    required this.label,
+  });
+}
 
+class NavBar extends StatelessWidget {
+  final int currentIndex;
+  final Function(int) onTap;
+  final int cartCount;
 
-// class NavBar extends StatefulWidget {
-//   final int currentIndex;
-//    //bool drware=false;
-//   const NavBar({required this.currentIndex, super.key});
-//
-//   @override
-//   State<NavBar> createState() => _NavBarState();
-// }
-//
-// class _NavBarState extends State<NavBar>{
-//
-//   bool drwareValue=false;
-//
-//   var bottomNavIndex = 0;
-//   // List<String> selectedText = [
-//   //   AppString.home.tr,
-//   //   AppString.myCourses.tr,
-//   //   AppString.profile.tr,
-//   //   AppString.menu.tr,
-//   //
-//   //
-//   List<String> unselectedIcon = [
-//     AppIcons.vlepo,
-//     AppIcons.search,
-//     AppIcons.eventIcon,
-//     AppIcons.profile,
-//   ];
-//
-//   List<String> selectedIcon = [
-//     AppIcons.vlepoActive,
-//     AppIcons.searchActive,
-//     AppIcons.eventActive,
-//     AppIcons.profileActive,
-//
-//   ];
-//
-//   @override
-//   void initState() {
-//     bottomNavIndex = widget.currentIndex;
-//     super.initState();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Container(
-//       decoration: BoxDecoration(
-//         borderRadius: BorderRadius.only(topLeft:Radius.circular(24.r,),topRight: Radius.circular(24.r)),
-//         color: Colors.white,
-//         boxShadow: const [
-//           BoxShadow(
-//             color: Colors.grey,
-//             offset: Offset(0.0, 1.0), //(x,y)
-//             blurRadius: 4,
-//           ),
-//         ],
-//       ),
-//       height: 80.h,
-//       width: MediaQuery.of(context).size.width,
-//       padding: EdgeInsetsDirectional.symmetric(horizontal: 8.w, vertical: 8.h),
-//       alignment: Alignment.center,
-//       // color: AppColors.greenNormalGreen4,
-//       child: Row(
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-//         children: List.generate(
-//           unselectedIcon.length,
-//           (index) => InkWell(
-//             onTap: () => onTap(index),
-//             child: Padding(
-//               padding: const EdgeInsetsDirectional.all(2),
-//               child: Container(
-//                 decoration: BoxDecoration(
-//                   borderRadius: BorderRadius.circular(8),
-//                   //color: index == bottomNavIndex ? AppColors.black500 : null,
-//                 ),
-//                 padding: const EdgeInsets.symmetric(
-//                   horizontal: 8,
-//                 ),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.center,
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     ///==================== Icon ===================
-//
-//                     index == bottomNavIndex
-//                         ? SvgPicture.asset(
-//                             selectedIcon[index],
-//                             height: 24.w,
-//                       // colorFilter: ColorFilter.mode(AppColors.golden700,BlendMode.srcIn),
-//                           )
-//                         : SvgPicture.asset(
-//                             unselectedIcon[index],
-//                             height: 24.w,
-//                           ),
-//
-//                     ///==================== Text ===================
-//                     SizedBox(height: 8.h,),
-//
-//                     index==bottomNavIndex?Container(
-//                     height:4.h,
-//                     width: 48.w,
-//                     decoration: BoxDecoration(
-//                     gradient: const LinearGradient(colors:[AppColors.yellow500,AppColors.red500]),
-//                    borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r),topRight: Radius.circular(20.r)),
-//                     ),
-//                     ):
-//
-//                     Container(
-//                       height:4.h,
-//                       width: 48.w,
-//                       decoration:BoxDecoration(
-//                       borderRadius: BorderRadius.only(topLeft: Radius.circular(20.r),topRight: Radius.circular(20.r)),
-//                       ),
-//                     ),
-//
-//                     // CustomText(
-//                     //   left: index == bottomNavIndex ? 4 : 0,
-//                     //   top: 4.h,
-//                     //   color:index==bottomNavIndex?AppColors.red500:Colors.transparent,
-//                     //   fontSize: 10.h,
-//                     //   fontWeight: FontWeight.w400,
-//                     //   text: selectedText[index],
-//                     // ),
-//
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   void onTap(int index)async{
-//     // HomeController homeController = Get.find<HomeController>();
-//     // homeController.scrollController.dispose();
-//     if (index == 0) {
-//       if (!(widget.currentIndex == 0)) {
-//        Get.offAll(() => UserHomeScreen());
-//       }
-//     }
-//     else if (index == 1) {
-//       if (!(widget.currentIndex == 1)){
-//           Get.offAll(() => UserSearchScreen());
-//       }
-//      }
-//       else if (index == 2){
-//       if (!(widget.currentIndex == 2)){
-//         Get.offAll(() => UserEventScreen());
-//         //Get.toNamed(AppRoute.studentEventScreen);
-//       }
-//     }
-//
-//     else if (index == 3) {
-//       if (!(widget.currentIndex == 3)) {
-//         Get.to(() =>  UserProfileScreen(),arguments: true);
-//       }
-//     }
-//   }
-// }
+  const NavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    this.cartCount = 0,
+  });
+
+  static const List<NavBarItem> defaultItems = [
+    NavBarItem(
+      selectedIcon: Icons.home_rounded,
+      unselectedIcon: Icons.home_outlined,
+      label: 'Home',
+    ),
+    NavBarItem(
+      selectedIcon: Icons.search_rounded,
+      unselectedIcon: Icons.search_rounded,
+      label: 'Browse',
+    ),
+    NavBarItem(
+      selectedIcon: Icons.shopping_cart_rounded,
+      unselectedIcon: Icons.shopping_cart_outlined,
+      label: 'Cart',
+    ),
+    NavBarItem(
+      selectedIcon: Icons.access_time_filled_rounded,
+      unselectedIcon: Icons.access_time_rounded,
+      label: 'Orders',
+    ),
+    NavBarItem(
+      selectedIcon: Icons.person_rounded,
+      unselectedIcon: Icons.person_outline_rounded,
+      label: 'Account',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 62.h,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(defaultItems.length, (index) {
+              final item = defaultItems[index];
+              final isSelected = currentIndex == index;
+              final isCart = index == 2;
+
+              return Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onTap(index),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      /// Active Top Indicator Line
+                      Container(
+                        height: 3.h,
+                        width: 32.w,
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.primaryAmber : Colors.transparent,
+                          borderRadius: BorderRadius.vertical(bottom: Radius.circular(3.r)),
+                        ),
+                      ),
+
+                      /// Icon with Cart Badge
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            isSelected ? item.selectedIcon : item.unselectedIcon,
+                            size: 24.sp,
+                            color: isSelected ? AppColors.primaryAmber : const Color(0xFF9CA3AF),
+                          ),
+                          if (isCart && cartCount > 0)
+                            Positioned(
+                              right: -8.w,
+                              top: -4.h,
+                              child: Container(
+                                padding: EdgeInsets.all(4.w),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
+                                  shape: BoxShape.circle,
+                                ),
+                                constraints: BoxConstraints(minWidth: 16.w, minHeight: 16.w),
+                                child: Text(
+                                  cartCount > 99 ? '99+' : cartCount.toString(),
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 9.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+
+                      /// Label
+                      Text(
+                        item.label,
+                        style: GoogleFonts.inter(
+                          fontSize: 11.sp,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected ? AppColors.primaryAmber : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                      SizedBox(height: 4.h),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
