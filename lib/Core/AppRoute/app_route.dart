@@ -1,3 +1,6 @@
+import '../../View/Screen/Auth/ForgotPassword/create_new_password_screen.dart';
+import '../../View/Screen/Auth/ForgotPassword/forgot_password_screen.dart';
+import '../../View/Screen/Auth/ForgotPassword/reset_password_otp_screen.dart';
 import 'package:get/get.dart';
 import '../../View/Screen/Auth/Otp/otp_screen.dart';
 import '../../View/Screen/Auth/SignIn/sign_in_screen.dart';
@@ -16,6 +19,10 @@ class AppRoute {
   static const String splashScreen = '/splash_screen';
   static const String signInScreen = '/sign_in_screen';
   static const String otpScreen = '/otp_screen';
+  static const String forgotPasswordScreen = '/forgot_password_screen';
+  static const String resetPasswordOtpScreen = '/reset_password_otp_screen';
+  static const String createNewPasswordScreen = '/create_new_password_screen';
+
 
   ///==================== Employee Routes ====================
   static const String employeeHomeScreen = '/employee_home_screen';
@@ -37,6 +44,24 @@ class AppRoute {
       name: signInScreen,
       page: () => const SignInScreen(),
       transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+        GetPage(
+      name: forgotPasswordScreen,
+      page: () => const ForgotPasswordScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: resetPasswordOtpScreen,
+      page: () => const ResetPasswordOtpScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: createNewPasswordScreen,
+      page: () => const CreateNewPasswordScreen(),
+      transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 250),
     ),
     GetPage(

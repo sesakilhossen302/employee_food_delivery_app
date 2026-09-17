@@ -115,14 +115,7 @@ class SignInController extends GetxController {
   }
 
   void handleForgotPassword() {
-    final email = emailController.text.trim();
-    Fluttertoast.showToast(
-      msg: email.isNotEmpty
-          ? ('Reset password link sent to ' + email)
-          : 'Reset password link sent to your email',
-      backgroundColor: AppColors.primaryColor,
-      textColor: Colors.white,
-    );
+    Get.toNamed(AppRoute.forgotPasswordScreen, arguments: emailController.text.trim());
   }
 
   @override
