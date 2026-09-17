@@ -46,7 +46,7 @@ class SignInScreen extends StatelessWidget {
                       child: Icon(
                         Icons.local_gas_station_rounded,
                         color: Colors.white,
-                        size: 34.sp,
+                        size: 34,
                       ),
                     ),
                   ),
@@ -56,7 +56,7 @@ class SignInScreen extends StatelessWidget {
                   Text(
                     'QuickStop',
                     style: GoogleFonts.poppins(
-                      fontSize: 26.sp,
+                      fontSize: 26,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
                       letterSpacing: -0.2,
@@ -68,7 +68,7 @@ class SignInScreen extends StatelessWidget {
                   Text(
                     'Gas Station Delivery',
                     style: GoogleFonts.poppins(
-                      fontSize: 14.sp,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                       color: const Color(0xFF6B7280),
                     ),
@@ -106,7 +106,7 @@ class SignInScreen extends StatelessWidget {
                                   child: Text(
                                     'Sign In',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: controller.selectedTab.value == 0
                                           ? Colors.white
@@ -134,7 +134,7 @@ class SignInScreen extends StatelessWidget {
                                   child: Text(
                                     'Sign Up',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14.sp,
+                                      fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                       color: controller.selectedTab.value == 1
                                           ? Colors.white
@@ -177,7 +177,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Email',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -189,7 +189,7 @@ class SignInScreen extends StatelessWidget {
           controller: controller.emailController,
           keyboardType: TextInputType.emailAddress,
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             color: const Color(0xFF111827),
           ),
           decoration: _inputDecoration(
@@ -214,7 +214,7 @@ class SignInScreen extends StatelessWidget {
             Text(
               'Password',
               style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF1F2937),
               ),
@@ -224,7 +224,7 @@ class SignInScreen extends StatelessWidget {
               child: Text(
                 'Forgot password?',
                 style: GoogleFonts.poppins(
-                  fontSize: 13.sp,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppColors.primaryColor,
                 ),
@@ -239,7 +239,7 @@ class SignInScreen extends StatelessWidget {
               controller: controller.passwordController,
               obscureText: controller.isPasswordHidden.value,
               style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+                fontSize: 14,
                 color: const Color(0xFF111827),
               ),
               decoration: _inputDecoration(
@@ -250,7 +250,7 @@ class SignInScreen extends StatelessWidget {
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                     color: const Color(0xFF9CA3AF),
-                    size: 20.sp,
+                    size: 20,
                   ),
                   onPressed: controller.togglePasswordVisibility,
                 ),
@@ -297,7 +297,7 @@ class SignInScreen extends StatelessWidget {
                     : Text(
                         'Sign In',
                         style: GoogleFonts.poppins(
-                          fontSize: 16.sp,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -317,7 +317,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Select Role',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -352,7 +352,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Full Name',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -362,7 +362,7 @@ class SignInScreen extends StatelessWidget {
           controller: controller.nameController,
           keyboardType: TextInputType.name,
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             color: const Color(0xFF111827),
           ),
           decoration: _inputDecoration(hintText: 'Jordan Smith'),
@@ -379,7 +379,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Email',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -389,7 +389,7 @@ class SignInScreen extends StatelessWidget {
           controller: controller.emailController,
           keyboardType: TextInputType.emailAddress,
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             color: const Color(0xFF111827),
           ),
           decoration: _inputDecoration(hintText: 'you@example.com'),
@@ -409,7 +409,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Phone Number',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -419,7 +419,7 @@ class SignInScreen extends StatelessWidget {
           controller: controller.phoneController,
           keyboardType: TextInputType.phone,
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             color: const Color(0xFF111827),
           ),
           decoration: _inputDecoration(hintText: '(555) 123-4567'),
@@ -436,7 +436,7 @@ class SignInScreen extends StatelessWidget {
         Text(
           'Password',
           style: GoogleFonts.poppins(
-            fontSize: 14.sp,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
             color: const Color(0xFF1F2937),
           ),
@@ -446,7 +446,7 @@ class SignInScreen extends StatelessWidget {
               controller: controller.passwordController,
               obscureText: controller.isPasswordHidden.value,
               style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+                fontSize: 14,
                 color: const Color(0xFF111827),
               ),
               decoration: _inputDecoration(
@@ -457,7 +457,7 @@ class SignInScreen extends StatelessWidget {
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                     color: const Color(0xFF9CA3AF),
-                    size: 20.sp,
+                    size: 20,
                   ),
                   onPressed: controller.togglePasswordVisibility,
                 ),
@@ -504,7 +504,7 @@ class SignInScreen extends StatelessWidget {
                     : Text(
                         'Create Account',
                         style: GoogleFonts.poppins(
-                          fontSize: 16.sp,
+                          fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
@@ -545,7 +545,7 @@ class SignInScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 20.sp,
+              size: 20,
               color: isSelected
                   ? AppColors.primaryColor
                   : const Color(0xFF6B7280),
@@ -554,7 +554,7 @@ class SignInScreen extends StatelessWidget {
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 14.sp,
+                fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected
                     ? AppColors.primaryColor
@@ -565,7 +565,7 @@ class SignInScreen extends StatelessWidget {
               SizedBox(width: 6.w),
               Icon(
                 Icons.check_circle_rounded,
-                size: 16.sp,
+                size: 16,
                 color: AppColors.primaryColor,
               ),
             ],
@@ -582,7 +582,7 @@ class SignInScreen extends StatelessWidget {
     return InputDecoration(
       hintText: hintText,
       hintStyle: GoogleFonts.poppins(
-        fontSize: 14.sp,
+        fontSize: 14,
         color: const Color(0xFF9CA3AF),
         fontWeight: FontWeight.w400,
       ),

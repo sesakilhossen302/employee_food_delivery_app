@@ -5,13 +5,11 @@ import 'package:get/get.dart';
 import 'Core/AppRoute/app_route.dart';
 import 'Core/Dependency/dependency.dart';
 import 'View/Widgegt/DeviceUtils/device_utils.dart';
-import 'service/socket_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   DeviceUtils.lockDevicePortrait();
   DependencyInjection di = DependencyInjection();
-  SocketApi.init();
   di.dependencies();
   runApp(const MyApp());
 }
