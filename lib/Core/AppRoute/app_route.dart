@@ -1,3 +1,9 @@
+import '../../View/Screen/Profile/edit_profile_screen.dart';
+import '../../View/Screen/Profile/notifications_screen.dart';
+import '../../View/Screen/Profile/terms_and_conditions_screen.dart';
+import '../../View/Screen/Profile/privacy_policy_screen.dart';
+import '../../View/Screen/Profile/help_support_screen.dart';
+import '../../View/Screen/Profile/my_addresses_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/create_new_password_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/forgot_password_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/reset_password_otp_screen.dart';
@@ -37,6 +43,15 @@ class AppRoute {
   ///==================== Driver Routes ====================
   static const String driverNavScreen = '/driver_nav_screen';
   static const String driverActiveDeliveryScreen = '/driver_active_delivery_screen';
+
+  ///==================== Profile & Shared Routes ====================
+  static const String editProfileScreen = '/edit_profile_screen';
+  static const String notificationsScreen = '/notifications_screen';
+  static const String termsAndConditionsScreen = '/terms_and_conditions_screen';
+  static const String privacyPolicyScreen = '/privacy_policy_screen';
+  static const String helpSupportScreen = '/help_support_screen';
+  static const String myAddressesScreen = '/my_addresses_screen';
+
 
   static List<GetPage> routes = [
     /// Authentication
@@ -127,6 +142,43 @@ class AppRoute {
       page: () => const DriverNavScreen(),
       transition: Transition.fadeIn,
       transitionDuration: const Duration(milliseconds: 300),
+    ),
+        /// Profile & Shared
+    GetPage(
+      name: editProfileScreen,
+      page: () => const EditProfileScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: notificationsScreen,
+      page: () => const NotificationsScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: termsAndConditionsScreen,
+      page: () => const TermsAndConditionsScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: privacyPolicyScreen,
+      page: () => const PrivacyPolicyScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: helpSupportScreen,
+      page: () => const HelpSupportScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: myAddressesScreen,
+      page: () => const MyAddressesScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
     ),
     GetPage(
       name: driverActiveDeliveryScreen,
