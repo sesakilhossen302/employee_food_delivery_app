@@ -120,6 +120,49 @@ class EmployeeHomeController extends GetxController {
   }
 
   /// Fetch data from API or load initial model instances
+  
+  List<MapEntry<ProductModel, int>> get cartItems {
+    final List<MapEntry<ProductModel, int>> items = [];
+    productQuantities.forEach((id, qty) {
+      final product = allProducts.firstWhereOrNull((p) => p.id == id);
+      if (product != null && qty > 0) {
+        items.add(MapEntry(product, qty));
+      }
+    });
+    return items;
+  }
+
+  double get subtotal {
+    double sum = 0.0;
+    productQuantities.forEach((id, qty) {
+      final product = allProducts.firstWhereOrNull((p) => p.id == id);
+      if (product != null) {
+        sum += product.price * qty;
+      }
+    });
+    return sum;
+  }
+
+  double get tax => subtotal * 0.08;
+  double get deliveryFee => 3.99;
+  double get totalWithDelivery => subtotal + tax + deliveryFee;
+  double get totalWithPickup => subtotal + tax;
+
+  void removeFromCart(String productId) {
+    productQuantities.remove(productId);
+    _recalculateCart();
+    Fluttertoast.showToast(
+      msg: 'Item removed from cart',
+      backgroundColor: const Color(0xFF6B7280),
+      textColor: Colors.white,
+    );
+  }
+
+  void clearCart() {
+    productQuantities.clear();
+    _recalculateCart();
+  }
+
   Future<void> fetchHomeData() async {
     isLoading.value = true;
     try {
@@ -252,6 +295,14 @@ class EmployeeHomeController extends GetxController {
       ]);
 
       featuredProducts.assignAll(allProducts.take(4).toList());
+
+      
+      // Pre-seed cart items matching screenshot (Coca-Cola 6-Pack & Dasani Water)
+      if (productQuantities.isEmpty) {
+        productQuantities['p3'] = 1; // Coca-Cola 6-Pack ($5.99)
+        productQuantities['p5'] = 1; // Dasani Water 24-Pack ($7.99)
+        _recalculateCart();
+      }
 
       todaysDeals.assignAll([
         DealModel(

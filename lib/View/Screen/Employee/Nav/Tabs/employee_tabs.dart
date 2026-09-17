@@ -3,38 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 
-class EmployeeCartScreen extends StatelessWidget {
-  const EmployeeCartScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text(
-          'My Cart',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart_outlined, size: 64.sp, color: AppColors.primaryAmber),
-            SizedBox(height: 12.h),
-            Text('Your Cart is Ready', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700)),
-            SizedBox(height: 6.h),
-            Text('Items added will appear here for 30-min delivery', style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF9CA3AF))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class EmployeeOrdersScreen extends StatelessWidget {
   const EmployeeOrdersScreen({super.key});
 

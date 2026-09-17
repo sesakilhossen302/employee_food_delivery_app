@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import '../../View/Screen/Auth/Otp/otp_screen.dart';
 import '../../View/Screen/Auth/SignIn/sign_in_screen.dart';
+import '../../View/Screen/Employee/Cart/employee_cart_screen.dart';
+import '../../View/Screen/Employee/Checkout/employee_checkout_screen.dart';
 import '../../View/Screen/Employee/Detail/employee_product_detail_screen.dart';
 import '../../View/Screen/Employee/Nav/employee_nav_screen.dart';
 
@@ -11,6 +13,8 @@ class AppRoute {
   static const String otpScreen = '/otp_screen';
   static const String employeeHomeScreen = '/employee_home_screen';
   static const String employeeNavScreen = '/employee_nav_screen';
+  static const String employeeCartScreen = '/employee_cart_screen';
+  static const String employeeCheckoutScreen = '/employee_checkout_screen';
   static const String employeeProductDetailScreen = '/employee_product_detail_screen';
 
   static List<GetPage> routes = [
@@ -39,6 +43,18 @@ class AppRoute {
       name: employeeNavScreen,
       page: () => const EmployeeNavScreen(),
       transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    GetPage(
+      name: employeeCartScreen,
+      page: () => const EmployeeCartScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: employeeCheckoutScreen,
+      page: () => const EmployeeCheckoutScreen(),
+      transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
     ),
     GetPage(
