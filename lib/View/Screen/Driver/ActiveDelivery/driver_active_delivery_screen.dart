@@ -1,3 +1,4 @@
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -145,22 +146,20 @@ class DriverActiveDeliveryScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 8.w),
-              Row(
-                children: [
-                  Container(
-                    width: 38.w,
-                    height: 38.w,
-                    decoration: const BoxDecoration(color: Color(0xFFECFDF5), shape: BoxShape.circle),
-                    child: const Icon(Icons.phone_outlined, color: Color(0xFF10B981), size: 18),
-                  ),
-                  SizedBox(width: 8.w),
-                  Container(
-                    width: 38.w,
-                    height: 38.w,
-                    decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
-                    child: const Icon(Icons.message_outlined, color: Color(0xFF2563EB), size: 18),
-                  ),
-                ],
+              GestureDetector(
+                onTap: () {
+                  Fluttertoast.showToast(
+                    msg: 'Calling ${order.customerName} (${order.customerPhone})...',
+                    backgroundColor: const Color(0xFF10B981),
+                    textColor: Colors.white,
+                  );
+                },
+                child: Container(
+                  width: 40.w,
+                  height: 40.w,
+                  decoration: const BoxDecoration(color: Color(0xFFECFDF5), shape: BoxShape.circle),
+                  child: const Icon(Icons.phone_outlined, color: Color(0xFF10B981), size: 20),
+                ),
               ),
             ],
           ),
