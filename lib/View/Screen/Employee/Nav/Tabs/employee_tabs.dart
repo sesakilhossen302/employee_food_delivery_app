@@ -1,39 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../../Utils/AppColors/app_colors.dart';
-
-class EmployeeOrdersScreen extends StatelessWidget {
-  const EmployeeOrdersScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text(
-          'My Orders',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.access_time_rounded, size: 64.sp, color: AppColors.primaryAmber),
-            SizedBox(height: 12.h),
-            Text('Order History & Status', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700)),
-            SizedBox(height: 6.h),
-            Text('Track fast 30-min deliveries in real time', style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF9CA3AF))),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class EmployeeAccountScreen extends StatelessWidget {
   const EmployeeAccountScreen({super.key});

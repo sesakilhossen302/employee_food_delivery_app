@@ -1,0 +1,841 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
+import '../../../../../Utils/AppColors/app_colors.dart';
+import '../Model/employee_order_models.dart';
+
+class EmployeeOrderDetailScreen extends StatelessWidget {
+  final OrderModel order;
+
+  const EmployeeOrderDetailScreen({super.key, required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: SafeArea(
+        child: Column(
+          children: [
+            /// 1. Top App Bar
+            _buildAppBar(),
+
+            /// 2. Scrollable Body
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Mini Map Graphic (Shown for active deliveries like #ORD-1001)
+                    if (order.isDelivery) ...[
+                      _buildMiniMapWidget(),
+                      SizedBox(height: 16.h),
+                    ],
+
+                    /// Order Progress Stepper Card
+                    _buildOrderProgressCard(),
+                    SizedBox(height: 16.h),
+
+                    /// Delivering to Card (if Delivery)
+                    if (order.isDelivery) ...[
+                      _buildDeliveringToCard(),
+                      SizedBox(height: 16.h),
+                    ],
+
+                    /// Estimated Arrival Card
+                    _buildEstimatedArrivalCard(),
+                    SizedBox(height: 16.h),
+
+                    /// Items Ordered Card
+                    _buildItemsOrderedCard(),
+                    SizedBox(height: 16.h),
+
+                    /// Payment Summary Card
+                    _buildPaymentSummaryCard(),
+                    SizedBox(height: 24.h),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// APP BAR
+  /// --------------------------------------------------------------------------
+  Widget _buildAppBar() {
+    return Container(
+      color: Colors.white,
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => Get.back(),
+                child: Container(
+                  width: 38.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      size: 24,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    order.id,
+                    style: GoogleFonts.inter(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Thu, ${order.date}',
+                    style: GoogleFonts.inter(
+                      fontSize: 11.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          /// Status Pill
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+            decoration: BoxDecoration(
+              color: order.statusBgColor,
+              borderRadius: BorderRadius.circular(16.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6.w,
+                  height: 6.w,
+                  decoration: BoxDecoration(
+                    color: order.statusColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Text(
+                  order.statusText,
+                  style: GoogleFonts.inter(
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w700,
+                    color: order.statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// MINI MAP WIDGET (Image 2)
+  /// --------------------------------------------------------------------------
+  Widget _buildMiniMapWidget() {
+    return Container(
+      width: double.infinity,
+      height: 180.h,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: const Color(0xFFDCFCE7)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.r),
+        child: Stack(
+          children: [
+            /// Grid Roads Pattern
+            CustomPaint(
+              size: Size(double.infinity, 180.h),
+              painter: _MapRoadsPainter(),
+            ),
+
+            /// Store Pin (QuickStop)
+            Positioned(
+              bottom: 16.h,
+              left: 16.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8.w,
+                      height: 8.w,
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    Text(
+                      'QuickStop',
+                      style: GoogleFonts.inter(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            /// Route Line and Pins
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _RoutePainter(),
+              ),
+            ),
+
+            /// "On the way" floating pill
+            Positioned(
+              top: 14.h,
+              right: 16.w,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryAmber,
+                  borderRadius: BorderRadius.circular(16.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryAmber.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_shipping_rounded, size: 14, color: Colors.white),
+                    SizedBox(width: 4.w),
+                    Text(
+                      'On the way',
+                      style: GoogleFonts.inter(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// ORDER PROGRESS STEPPER CARD (Images 2, 3, 4, 5)
+  /// --------------------------------------------------------------------------
+  Widget _buildOrderProgressCard() {
+    final steps = [
+      'Order Received',
+      'Confirmed',
+      'Preparing',
+      order.isDelivery ? 'Ready for Driver' : 'Ready for Pickup',
+      if (order.isDelivery) 'Out for Delivery',
+      'Delivered',
+    ];
+
+    int activeIndex = 0;
+    switch (order.status) {
+      case OrderStatus.orderReceived:
+        activeIndex = 0;
+        break;
+      case OrderStatus.confirmed:
+        activeIndex = 1;
+        break;
+      case OrderStatus.preparing:
+        activeIndex = 2;
+        break;
+      case OrderStatus.readyForDriver:
+        activeIndex = 3;
+        break;
+      case OrderStatus.outForDelivery:
+        activeIndex = 4;
+        break;
+      case OrderStatus.delivered:
+        activeIndex = steps.length - 1;
+        break;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Order Progress',
+            style: GoogleFonts.inter(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: steps.length,
+            itemBuilder: (context, index) {
+              final isPassed = index < activeIndex;
+              final isCurrent = index == activeIndex;
+              final isLast = index == steps.length - 1;
+
+              return IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Stepper Icon & Connecting Line
+                    Column(
+                      children: [
+                        if (isPassed)
+                          Container(
+                            width: 22.w,
+                            height: 22.w,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primaryAmber,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(Icons.check, size: 14, color: Colors.white),
+                            ),
+                          )
+                        else if (isCurrent)
+                          Container(
+                            width: 22.w,
+                            height: 22.w,
+                            decoration: BoxDecoration(
+                              color: order.status == OrderStatus.orderReceived
+                                  ? const Color(0xFF6B7280)
+                                  : AppColors.primaryAmber,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Container(
+                                width: 8.w,
+                                height: 8.w,
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            width: 22.w,
+                            height: 22.w,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF3F4F6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Container(
+                                width: 6.w,
+                                height: 6.w,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFD1D5DB),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        if (!isLast)
+                          Expanded(
+                            child: Container(
+                              width: 2.w,
+                              color: isPassed ? AppColors.primaryAmber : const Color(0xFFE5E7EB),
+                              margin: EdgeInsets.symmetric(vertical: 4.h),
+                            ),
+                          ),
+                      ],
+                    ),
+                    SizedBox(width: 14.w),
+
+                    /// Step Title & Subtitle
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: isLast ? 0 : 20.h),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              steps[index],
+                              style: GoogleFonts.inter(
+                                fontSize: 14.sp,
+                                fontWeight: (isPassed || isCurrent)
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: (isPassed || isCurrent)
+                                    ? const Color(0xFF111827)
+                                    : const Color(0xFF9CA3AF),
+                              ),
+                            ),
+                            if (isCurrent) ...[
+                              SizedBox(height: 2.h),
+                              Text(
+                                'In progress',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: order.status == OrderStatus.orderReceived
+                                      ? const Color(0xFF6B7280)
+                                      : AppColors.primaryAmber,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// DELIVERING TO CARD
+  /// --------------------------------------------------------------------------
+  Widget _buildDeliveringToCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38.w,
+            height: 38.w,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: const Center(
+              child: Icon(Icons.location_on_outlined, color: Color(0xFFD97706), size: 20),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Delivering to',
+                  style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  order.deliveryAddress,
+                  style: GoogleFonts.inter(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
+                ),
+                SizedBox(height: 3.h),
+                Text(
+                  'Note: ${order.deliveryNote}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12.sp,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// ESTIMATED ARRIVAL CARD
+  /// --------------------------------------------------------------------------
+  Widget _buildEstimatedArrivalCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38.w,
+            height: 38.w,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEF3C7),
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: const Center(
+              child: Icon(Icons.access_time_rounded, color: Color(0xFFD97706), size: 20),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Estimated arrival',
+                style: GoogleFonts.inter(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF9CA3AF),
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Row(
+                children: [
+                  Text(
+                    order.estimatedTime.replaceFirst('Est. ', ''),
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    '(${order.estimatedRange})',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// ITEMS ORDERED CARD
+  /// --------------------------------------------------------------------------
+  Widget _buildItemsOrderedCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Items Ordered',
+            style: GoogleFonts.inter(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          SizedBox(height: 14.h),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: order.items.length,
+            separatorBuilder: (context, index) => Divider(height: 20.h, color: const Color(0xFFF3F4F6)),
+            itemBuilder: (context, index) {
+              final item = order.items[index];
+
+              return Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: SizedBox(
+                      width: 52.w,
+                      height: 52.w,
+                      child: Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFFF3F4F6),
+                            child: const Icon(Icons.fastfood_outlined, color: Color(0xFF9CA3AF)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        SizedBox(height: 2.h),
+                        Text(
+                          'Qty: ${item.qty}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.sp,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '\$${item.price.toStringAsFixed(2)}',
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// --------------------------------------------------------------------------
+  /// PAYMENT SUMMARY CARD
+  /// --------------------------------------------------------------------------
+  Widget _buildPaymentSummaryCard() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18.r),
+        border: Border.all(color: const Color(0xFFF3F4F6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Payment Summary',
+            style: GoogleFonts.inter(
+              fontSize: 15.sp,
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF111827),
+            ),
+          ),
+          SizedBox(height: 14.h),
+          _buildSummaryRow('Subtotal', '\$${order.subtotal.toStringAsFixed(2)}'),
+          SizedBox(height: 10.h),
+          _buildSummaryRow('Tax', '\$${order.tax.toStringAsFixed(2)}'),
+          if (order.isDelivery) ...[
+            SizedBox(height: 10.h),
+            _buildSummaryRow('Delivery fee', '\$${order.deliveryFee.toStringAsFixed(2)}'),
+          ],
+          if (order.tip > 0) ...[
+            SizedBox(height: 10.h),
+            _buildSummaryRow('Tip', '\$${order.tip.toStringAsFixed(2)}'),
+          ],
+          Divider(height: 22.h, color: const Color(0xFFF3F4F6)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Total',
+                style: GoogleFonts.inter(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              Text(
+                '\$${order.total.toStringAsFixed(2)}',
+                style: GoogleFonts.inter(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.primaryAmber,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            order.paymentMethod,
+            style: GoogleFonts.inter(
+              fontSize: 12.sp,
+              color: const Color(0xFF9CA3AF),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF6B7280)),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF111827),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Custom Painters for Stylized Map
+class _MapRoadsPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final blockPaint = Paint()
+      ..color = const Color(0xFFE2F4E8)
+      ..style = PaintingStyle.fill;
+
+    // Draw grid blocks
+    final blockW = size.width / 4;
+    final blockH = size.height / 3;
+
+    for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 3; j++) {
+        final rect = Rect.fromLTWH(
+          i * blockW + 6,
+          j * blockH + 6,
+          blockW - 12,
+          blockH - 12,
+        );
+        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), blockPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _RoutePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dashedPaint = Paint()
+      ..color = const Color(0xFFF59E0B)
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    path.moveTo(size.width * 0.28, size.height * 0.55);
+    path.lineTo(size.width * 0.45, size.height * 0.55);
+    path.lineTo(size.width * 0.45, size.height * 0.26);
+    path.lineTo(size.width * 0.70, size.height * 0.26);
+    path.lineTo(size.width * 0.70, size.height * 0.55);
+    path.lineTo(size.width * 0.85, size.height * 0.55);
+
+    // Draw dashed path
+    canvas.drawPath(path, dashedPaint);
+
+    // Store starting dot
+    final startPaint = Paint()..color = const Color(0xFF111827);
+    canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.55), 7, startPaint);
+
+    // Destination target circle
+    final destRingPaint = Paint()
+      ..color = const Color(0xFFF59E0B)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+    final destCenterPaint = Paint()..color = const Color(0xFFF59E0B);
+
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 8, destRingPaint);
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 4, destCenterPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}

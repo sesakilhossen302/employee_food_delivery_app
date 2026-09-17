@@ -4,6 +4,7 @@ import '../../../Widgegt/navBar/nav_bar.dart';
 import '../Cart/employee_cart_screen.dart';
 import '../Home/Controller/employee_home_controller.dart';
 import '../Home/employee_home_screen.dart';
+import '../Orders/employee_orders_screen.dart';
 import 'Controller/employee_nav_controller.dart';
 import 'Tabs/employee_browse_screen.dart';
 import 'Tabs/employee_tabs.dart';

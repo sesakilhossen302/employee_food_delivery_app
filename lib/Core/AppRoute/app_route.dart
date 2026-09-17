@@ -5,6 +5,8 @@ import '../../View/Screen/Employee/Cart/employee_cart_screen.dart';
 import '../../View/Screen/Employee/Checkout/employee_checkout_screen.dart';
 import '../../View/Screen/Employee/Detail/employee_product_detail_screen.dart';
 import '../../View/Screen/Employee/Nav/employee_nav_screen.dart';
+import '../../View/Screen/Employee/Orders/Detail/employee_order_detail_screen.dart';
+import '../../View/Screen/Employee/Orders/employee_orders_screen.dart';
 
 class AppRoute {
   ///==================== Initial Routes ====================
@@ -16,6 +18,8 @@ class AppRoute {
   static const String employeeCartScreen = '/employee_cart_screen';
   static const String employeeCheckoutScreen = '/employee_checkout_screen';
   static const String employeeProductDetailScreen = '/employee_product_detail_screen';
+  static const String employeeOrdersScreen = '/employee_orders_screen';
+  static const String employeeOrderDetailScreen = '/employee_order_detail_screen';
 
   static List<GetPage> routes = [
     ///==================== Authentication Routes ====================
@@ -60,6 +64,18 @@ class AppRoute {
     GetPage(
       name: employeeProductDetailScreen,
       page: () => EmployeeProductDetailScreen(product: Get.arguments),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+    GetPage(
+      name: employeeOrdersScreen,
+      page: () => const EmployeeOrdersScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
+      name: employeeOrderDetailScreen,
+      page: () => EmployeeOrderDetailScreen(order: Get.arguments),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
     ),
