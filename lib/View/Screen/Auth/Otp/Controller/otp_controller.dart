@@ -91,10 +91,12 @@ class OtpController extends GetxController {
       );
 
       // Check role: If Employee, navigate to EmployeeHomeScreen
-      if (userRole.value.trim().toLowerCase() == 'employee') {
-        Get.offAllNamed(AppRoute.employeeHomeScreen);
+            // Check role routing: Driver vs Employee
+      final role = userRole.value.trim().toLowerCase();
+      if (role == 'driver') {
+        Get.offAllNamed(AppRoute.driverNavScreen);
       } else {
-        Get.offAllNamed(AppRoute.signInScreen);
+        Get.offAllNamed(AppRoute.employeeNavScreen);
       }
     } catch (e) {
       Fluttertoast.showToast(

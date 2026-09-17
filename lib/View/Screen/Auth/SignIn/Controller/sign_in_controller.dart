@@ -49,13 +49,21 @@ class SignInController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 1200));
 
       final email = emailController.text.trim();
+      final role = selectedRole.value;
       await SharePrefsHelper.setString(SharedPreferenceValue.email, email);
+      await SharePrefsHelper.setString(SharedPreferenceValue.role, role);
 
       Fluttertoast.showToast(
-        msg: 'Signed in successfully!',
+        msg: 'Signed in successfully as $role!',
         backgroundColor: AppColors.primaryColor,
         textColor: Colors.white,
       );
+
+      if (role.toLowerCase() == 'driver') {
+        Get.offAllNamed(AppRoute.driverNavScreen);
+      } else {
+        Get.offAllNamed(AppRoute.employeeNavScreen);
+      }
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Sign in failed: ' + e.toString(),
