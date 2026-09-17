@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../View/Screen/Auth/Otp/otp_screen.dart';
 import '../../View/Screen/Auth/SignIn/sign_in_screen.dart';
+import '../../View/Screen/Employee/Account/employee_account_screen.dart';
 import '../../View/Screen/Employee/Cart/employee_cart_screen.dart';
 import '../../View/Screen/Employee/Checkout/employee_checkout_screen.dart';
 import '../../View/Screen/Employee/Detail/employee_product_detail_screen.dart';
@@ -20,6 +21,7 @@ class AppRoute {
   static const String employeeProductDetailScreen = '/employee_product_detail_screen';
   static const String employeeOrdersScreen = '/employee_orders_screen';
   static const String employeeOrderDetailScreen = '/employee_order_detail_screen';
+  static const String employeeAccountScreen = '/employee_account_screen';
 
   static List<GetPage> routes = [
     ///==================== Authentication Routes ====================
@@ -78,6 +80,12 @@ class AppRoute {
       page: () => EmployeeOrderDetailScreen(order: Get.arguments),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 300),
+    ),
+    GetPage(
+      name: employeeAccountScreen,
+      page: () => const EmployeeAccountScreen(),
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 250),
     ),
   ];
 }
