@@ -126,20 +126,25 @@ class DriverActiveDeliveryScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    order.customerName,
-                    style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w800),
-                  ),
-                  SizedBox(height: 2.h),
-                  Text(
-                    order.customerPhone,
-                    style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF6B7280)),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.customerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(fontSize: 16.sp, fontWeight: FontWeight.w800),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      order.customerPhone,
+                      style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF6B7280)),
+                    ),
+                  ],
+                ),
               ),
+              SizedBox(width: 8.w),
               Row(
                 children: [
                   Container(

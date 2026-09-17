@@ -127,24 +127,29 @@ class DriverMapScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '8 mins (3.2 km)',
-                                style: GoogleFonts.inter(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF10B981),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '8 mins (3.2 km)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 18.sp,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF10B981),
+                                  ),
                                 ),
-                              ),
-                              SizedBox(height: 2.h),
-                              Text(
-                                order.deliveryAddress,
-                                style: GoogleFonts.inter(fontSize: 12.sp, color: const Color(0xFF6B7280)),
-                              ),
-                            ],
+                                SizedBox(height: 2.h),
+                                Text(
+                                  order.deliveryAddress,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 12.sp, color: const Color(0xFF6B7280)),
+                                ),
+                              ],
+                            ),
                           ),
+                          SizedBox(width: 8.w),
                           Container(
                             padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
                             decoration: BoxDecoration(
