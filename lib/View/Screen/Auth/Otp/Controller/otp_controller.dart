@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import '../../../../../Core/AppRoute/app_route.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 import '../../../../../helper/shared_prefe/shared_prefe.dart';
 
@@ -61,7 +62,7 @@ class OtpController extends GetxController {
     if (!canResend.value) return;
 
     Fluttertoast.showToast(
-      msg: 'A new 6-digit verification code has been sent to ' + userEmail.value,
+      msg: 'A new 6-digit verification code has been sent to ${userEmail.value}',
       backgroundColor: AppColors.primaryColor,
       textColor: Colors.white,
     );
@@ -84,16 +85,20 @@ class OtpController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 1400));
 
       Fluttertoast.showToast(
-        msg: 'Email verified successfully as ' + userRole.value + '!',
+        msg: 'Email verified successfully as ${userRole.value}!',
         backgroundColor: AppColors.primaryColor,
         textColor: Colors.white,
       );
 
-      // Navigate to Sign In or Home after successful verification
-      Get.offAllNamed('/sign_in_screen');
+      // Check role: If Employee, navigate to EmployeeHomeScreen
+      if (userRole.value.trim().toLowerCase() == 'employee') {
+        Get.offAllNamed(AppRoute.employeeHomeScreen);
+      } else {
+        Get.offAllNamed(AppRoute.signInScreen);
+      }
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Verification failed: ' + e.toString(),
+        msg: 'Verification failed: $e',
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
