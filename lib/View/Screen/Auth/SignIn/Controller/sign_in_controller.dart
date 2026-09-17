@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import '../../../../../Core/AppRoute/app_route.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
+import '../../../../../helper/shared_prefe/shared_prefe.dart';
 
 class SignInController extends GetxController {
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
@@ -46,6 +48,9 @@ class SignInController extends GetxController {
     try {
       await Future.delayed(const Duration(milliseconds: 1200));
 
+      final email = emailController.text.trim();
+      await SharePrefsHelper.setString(SharedPreferenceValue.email, email);
+
       Fluttertoast.showToast(
         msg: 'Signed in successfully!',
         backgroundColor: AppColors.primaryColor,
@@ -67,13 +72,29 @@ class SignInController extends GetxController {
 
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(milliseconds: 1200));
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      final email = emailController.text.trim();
+      final role = selectedRole.value;
+
+      /// Save role & email to SharedPreferences
+      await SharePrefsHelper.setString(SharedPreferenceValue.role, role);
+      await SharePrefsHelper.setString(SharedPreferenceValue.email, email);
+
       Fluttertoast.showToast(
-        msg: 'Account created as ' + selectedRole.value + ' successfully!',
+        msg: 'Account created as ' + role + '! Please verify OTP.',
         backgroundColor: AppColors.primaryColor,
         textColor: Colors.white,
       );
-      selectedTab.value = 0;
+
+      /// Navigate to OTP screen with email and role arguments
+      Get.toNamed(
+        AppRoute.otpScreen,
+        arguments: {
+          'email': email,
+          'role': role,
+        },
+      );
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Sign up failed: ' + e.toString(),
