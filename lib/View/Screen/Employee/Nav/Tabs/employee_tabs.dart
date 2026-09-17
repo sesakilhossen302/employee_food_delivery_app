@@ -3,35 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 
-class EmployeeBrowseScreen extends StatelessWidget {
-  const EmployeeBrowseScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text('Browse Categories', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_rounded, size: 64.sp, color: AppColors.primaryAmber),
-            SizedBox(height: 12.h),
-            Text('Browse Food & Drinks', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700)),
-            SizedBox(height: 6.h),
-            Text('Search items, deals & categories', style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF9CA3AF))),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class EmployeeCartScreen extends StatelessWidget {
   const EmployeeCartScreen({super.key});
 
@@ -40,7 +11,10 @@ class EmployeeCartScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('My Cart', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
+        title: Text(
+          'My Cart',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
@@ -53,7 +27,7 @@ class EmployeeCartScreen extends StatelessWidget {
             SizedBox(height: 12.h),
             Text('Your Cart is Ready', style: GoogleFonts.inter(fontSize: 18.sp, fontWeight: FontWeight.w700)),
             SizedBox(height: 6.h),
-            Text('Add more items from Home or checkout', style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF9CA3AF))),
+            Text('Items added will appear here for 30-min delivery', style: GoogleFonts.inter(fontSize: 13.sp, color: const Color(0xFF9CA3AF))),
           ],
         ),
       ),
@@ -69,7 +43,10 @@ class EmployeeOrdersScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('My Orders', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
+        title: Text(
+          'My Orders',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
@@ -98,7 +75,10 @@ class EmployeeAccountScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text('Employee Account', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
+        title: Text(
+          'Employee Account',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,

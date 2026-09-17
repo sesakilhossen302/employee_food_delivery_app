@@ -8,13 +8,17 @@ class EmployeeHomeController extends GetxController {
   final RxInt currentNavIndex = 0.obs;
   final RxString selectedLocation = 'Current Location'.obs;
   final RxInt selectedCategoryIndex = 0.obs;
+  final RxString selectedCategory = 'Drinks'.obs;
+  final RxString searchQuery = ''.obs;
 
   final RxBool isLoading = false.obs;
 
   final RxList<CategoryModel> categories = <CategoryModel>[].obs;
   final RxList<ProductModel> featuredProducts = <ProductModel>[].obs;
+  final RxList<ProductModel> allProducts = <ProductModel>[].obs;
   final RxList<DealModel> todaysDeals = <DealModel>[].obs;
 
+  final RxMap<String, int> productQuantities = <String, int>{}.obs;
   final RxInt cartCount = 0.obs;
 
   @override
@@ -29,25 +33,96 @@ class EmployeeHomeController extends GetxController {
 
   void selectCategory(int index) {
     selectedCategoryIndex.value = index;
+    if (index >= 0 && index < categories.length) {
+      selectedCategory.value = categories[index].name;
+    }
   }
 
-  void addToCart(String itemName) {
-    cartCount.value++;
+  void selectCategoryByName(String categoryName) {
+    selectedCategory.value = categoryName;
+    final index = categories.indexWhere((c) => c.name.toLowerCase() == categoryName.toLowerCase());
+    if (index != -1) {
+      selectedCategoryIndex.value = index;
+    }
+  }
+
+  int getQuantity(String productId) {
+    return productQuantities[productId] ?? 0;
+  }
+
+  void increaseQuantity(ProductModel product) {
+    final current = getQuantity(product.id);
+    if (current >= product.maxPerOrder) {
+      Fluttertoast.showToast(
+        msg: 'Maximum ${product.maxPerOrder} items allowed for this product',
+        backgroundColor: Colors.orange,
+        textColor: Colors.white,
+      );
+      return;
+    }
+
+    productQuantities[product.id] = current + 1;
+    _recalculateCart();
     Fluttertoast.showToast(
-      msg: '$itemName added to cart!',
-      backgroundColor: AppColors.primaryColor,
-      textColor: const Color(0xFFFFFFFF),
+      msg: '${product.name} added to cart (${current + 1})',
+      backgroundColor: AppColors.primaryAmber,
+      textColor: Colors.white,
     );
+  }
+
+  void decreaseQuantity(ProductModel product) {
+    final current = getQuantity(product.id);
+    if (current <= 1) {
+      productQuantities.remove(product.id);
+      Fluttertoast.showToast(
+        msg: '${product.name} removed from cart',
+        backgroundColor: const Color(0xFF6B7280),
+        textColor: Colors.white,
+      );
+    } else {
+      productQuantities[product.id] = current - 1;
+    }
+    _recalculateCart();
+  }
+
+  void setQuantity(ProductModel product, int qty) {
+    if (qty <= 0) {
+      productQuantities.remove(product.id);
+    } else {
+      productQuantities[product.id] = qty.clamp(1, product.maxPerOrder);
+    }
+    _recalculateCart();
+    Fluttertoast.showToast(
+      msg: '${product.name} cart quantity updated to $qty',
+      backgroundColor: AppColors.primaryAmber,
+      textColor: Colors.white,
+    );
+  }
+
+  void _recalculateCart() {
+    int total = 0;
+    productQuantities.forEach((_, qty) {
+      total += qty;
+    });
+    cartCount.value = total;
+  }
+
+  List<ProductModel> get filteredProducts {
+    return allProducts.where((p) {
+      final matchesCategory = p.category.toLowerCase() == selectedCategory.value.toLowerCase();
+      if (searchQuery.value.trim().isEmpty) {
+        return matchesCategory;
+      }
+      final matchesSearch = p.name.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
+          p.description.toLowerCase().contains(searchQuery.value.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).toList();
   }
 
   /// Fetch data from API or load initial model instances
   Future<void> fetchHomeData() async {
     isLoading.value = true;
     try {
-      // Prepared for API integration:
-      // final response = await ApiClient.getData(ApiConstant.home);
-      // parse response.body into models...
-
       categories.assignAll([
         CategoryModel(
           id: '1',
@@ -87,22 +162,30 @@ class EmployeeHomeController extends GetxController {
         ),
       ]);
 
-      featuredProducts.assignAll([
+      allProducts.assignAll([
         ProductModel(
           id: 'p1',
           name: 'Gatorade Cool Blue',
           unit: '32 oz',
           price: 3.49,
+          category: 'Drinks',
+          description: 'Sports drink, 32 oz · 32 oz',
           imageUrl: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=400',
           isSale: false,
+          maxPerOrder: 12,
+          inStock: true,
         ),
         ProductModel(
           id: 'p2',
           name: 'Red Bull Original',
           unit: '250ml',
           price: 4.29,
+          category: 'Energy Drinks',
+          description: 'Vitalizes body and mind, 250ml can',
           imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
           isSale: false,
+          maxPerOrder: 12,
+          inStock: true,
         ),
         ProductModel(
           id: 'p3',
@@ -110,27 +193,65 @@ class EmployeeHomeController extends GetxController {
           unit: '6 × 355ml',
           price: 5.99,
           originalPrice: 7.99,
+          category: 'Pop',
+          description: 'Classic cola, 355ml cans (6 pack)',
           imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400',
           isSale: true,
+          maxPerOrder: 10,
+          inStock: true,
         ),
         ProductModel(
           id: 'p4',
           name: 'Monster Energy Green',
           unit: '473ml',
           price: 3.99,
-          imageUrl: 'https://images.unsplash.com/photo-1624517452488-04869289c4ca?w=400',
+          category: 'Energy Drinks',
+          description: 'Tear into a can of Monster Energy, 473ml',
+          imageUrl: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=400',
           isSale: false,
+          maxPerOrder: 12,
+          inStock: true,
         ),
         ProductModel(
           id: 'p5',
-          name: 'Weekend Deal Bundle',
-          unit: 'Combo Pack',
-          price: 9.99,
-          originalPrice: 12.99,
-          imageUrl: 'https://images.unsplash.com/photo-1568644396922-5c3bfae12521?w=400',
+          name: 'Dasani Water 24-Pack',
+          unit: '24 × 500ml',
+          price: 7.99,
+          originalPrice: 9.99,
+          category: 'Water',
+          description: 'Purified water bottles, mineral enhanced',
+          imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400',
           isSale: true,
+          maxPerOrder: 8,
+          inStock: true,
+        ),
+        ProductModel(
+          id: 'p6',
+          name: 'Starbucks Frappuccino',
+          unit: '405ml',
+          price: 4.49,
+          category: 'Coffee',
+          description: 'Chilled coffee drink vanilla flavor',
+          imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400',
+          isSale: false,
+          maxPerOrder: 12,
+          inStock: true,
+        ),
+        ProductModel(
+          id: 'p7',
+          name: 'Doritos Nacho Cheese',
+          unit: '9.25 oz',
+          price: 3.99,
+          category: 'Snacks',
+          description: 'Crunchy tortilla chips with nacho cheese flavor',
+          imageUrl: 'https://images.unsplash.com/photo-1568644396922-5c3bfae12521?w=400',
+          isSale: false,
+          maxPerOrder: 15,
+          inStock: true,
         ),
       ]);
+
+      featuredProducts.assignAll(allProducts.take(4).toList());
 
       todaysDeals.assignAll([
         DealModel(

@@ -42,7 +42,10 @@ class ProductModel {
   final double? originalPrice;
   final String imageUrl;
   final bool isSale;
-  final String? category;
+  final String category;
+  final String description;
+  final int maxPerOrder;
+  final bool inStock;
 
   ProductModel({
     required this.id,
@@ -52,7 +55,10 @@ class ProductModel {
     this.originalPrice,
     required this.imageUrl,
     this.isSale = false,
-    this.category,
+    this.category = 'Drinks',
+    this.description = '',
+    this.maxPerOrder = 12,
+    this.inStock = true,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -64,7 +70,10 @@ class ProductModel {
       originalPrice: (json['originalPrice'] as num?)?.toDouble(),
       imageUrl: json['imageUrl'] ?? '',
       isSale: json['isSale'] ?? false,
-      category: json['category'],
+      category: json['category'] ?? 'Drinks',
+      description: json['description'] ?? '',
+      maxPerOrder: json['maxPerOrder'] ?? 12,
+      inStock: json['inStock'] ?? true,
     );
   }
 
@@ -78,6 +87,9 @@ class ProductModel {
       'imageUrl': imageUrl,
       'isSale': isSale,
       'category': category,
+      'description': description,
+      'maxPerOrder': maxPerOrder,
+      'inStock': inStock,
     };
   }
 }

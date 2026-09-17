@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
+import '../Detail/employee_product_detail_screen.dart';
 import '../Nav/Controller/employee_nav_controller.dart';
 import 'Controller/employee_home_controller.dart';
 import 'Model/employee_home_models.dart';
@@ -176,7 +177,6 @@ class EmployeeHomeScreen extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            /// Banner Image
             Image.network(
               'https://images.unsplash.com/photo-1556742049-0a67c5574f73?w=800',
               fit: BoxFit.cover,
@@ -192,8 +192,6 @@ class EmployeeHomeScreen extends StatelessWidget {
                 );
               },
             ),
-
-            /// Dark Gradient Overlay for perfect text contrast
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -206,15 +204,12 @@ class EmployeeHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-
-            /// Banner Content
             Padding(
               padding: EdgeInsets.all(20.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  /// Fast Delivery Pill
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                     decoration: BoxDecoration(
@@ -242,8 +237,6 @@ class EmployeeHomeScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: 12.h),
-
-                  /// Heading
                   Text(
                     'Delivered in\n30 minutes',
                     style: GoogleFonts.inter(
@@ -263,7 +256,7 @@ class EmployeeHomeScreen extends StatelessWidget {
   }
 
   /// --------------------------------------------------------------------------
-  /// SHOP BY CATEGORY
+  /// SHOP BY CATEGORY -> Clicking opens Browse tab on this category!
   /// --------------------------------------------------------------------------
   Widget _buildShopByCategory(EmployeeHomeController controller) {
     return Column(
@@ -289,7 +282,12 @@ class EmployeeHomeScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final category = controller.categories[index];
                 return GestureDetector(
-                  onTap: () => controller.selectCategory(index),
+                  onTap: () {
+                    controller.selectCategoryByName(category.name);
+                    if (Get.isRegistered<EmployeeNavController>()) {
+                      Get.find<EmployeeNavController>().changeNavIndex(1); // Switch to Browse tab!
+                    }
+                  },
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -359,7 +357,11 @@ class EmployeeHomeScreen extends StatelessWidget {
               ),
             ),
             GestureDetector(
-              onTap: () {},
+              onTap: () {
+                if (Get.isRegistered<EmployeeNavController>()) {
+                  Get.find<EmployeeNavController>().changeNavIndex(1);
+                }
+              },
               child: Row(
                 children: [
                   Text(
@@ -402,151 +404,221 @@ class EmployeeHomeScreen extends StatelessWidget {
   }
 
   Widget _buildProductCard(ProductModel product, EmployeeHomeController controller) {
-    return Container(
-      width: 172.w,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          /// Product Image with optional SALE tag
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 125.h,
-                  child: Image.network(
-                    product.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: const Color(0xFFF3F4F6),
-                        child: Center(
-                          child: Icon(
-                            Icons.fastfood_outlined,
-                            size: 40.sp,
-                            color: const Color(0xFF9CA3AF),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              if (product.isSale)
-                Positioned(
-                  top: 8.h,
-                  left: 8.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444),
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                    child: Text(
-                      'SALE',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          /// Card Details
-          Padding(
-            padding: EdgeInsets.all(12.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => EmployeeProductDetailScreen(product: product));
+      },
+      child: Container(
+        width: 172.w,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: const Color(0xFFF3F4F6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            /// Product Image with optional SALE tag
+            Stack(
               children: [
-                Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
-                  ),
-                ),
-                SizedBox(height: 3.h),
-                Text(
-                  product.unit,
-                  style: GoogleFonts.inter(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF9CA3AF),
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Row(
-                  children: [
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: GoogleFonts.inter(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        color: product.isSale ? AppColors.primaryAmber : const Color(0xFF111827),
-                      ),
+                ClipRRect(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 125.h,
+                    child: Image.network(
+                      product.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: const Color(0xFFF3F4F6),
+                          child: Center(
+                            child: Icon(
+                              Icons.fastfood_outlined,
+                              size: 40.sp,
+                              color: const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    if (product.originalPrice != null) ...[
-                      SizedBox(width: 6.w),
-                      Text(
-                        '\$${product.originalPrice!.toStringAsFixed(2)}',
+                  ),
+                ),
+                if (product.isSale)
+                  Positioned(
+                    top: 8.h,
+                    left: 8.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Text(
+                        'SALE',
                         style: GoogleFonts.inter(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF9CA3AF),
-                          decoration: TextDecoration.lineThrough,
+                          color: Colors.white,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                SizedBox(height: 10.h),
-                SizedBox(
-                  width: double.infinity,
-                  height: 38.h,
-                  child: ElevatedButton(
-                    onPressed: () => controller.addToCart(product.name),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryAmber,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14.r),
-                      ),
-                      padding: EdgeInsets.zero,
-                    ),
-                    child: Text(
-                      'Add to Cart',
-                      style: GoogleFonts.inter(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
                     ),
                   ),
-                ),
               ],
             ),
-          ),
-        ],
+
+            /// Card Details
+            Padding(
+              padding: EdgeInsets.all(12.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    product.unit,
+                    style: GoogleFonts.inter(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Row(
+                    children: [
+                      Text(
+                        '\$${product.price.toStringAsFixed(2)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          color: product.isSale ? AppColors.primaryAmber : const Color(0xFF111827),
+                        ),
+                      ),
+                      if (product.originalPrice != null) ...[
+                        SizedBox(width: 6.w),
+                        Text(
+                          '\$${product.originalPrice!.toStringAsFixed(2)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF9CA3AF),
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: 10.h),
+
+                  /// Quantity Stepper or "Add to Cart" Button (Image 1)
+                  Obx(() {
+                    final qty = controller.getQuantity(product.id);
+
+                    if (qty > 0) {
+                      return Container(
+                        height: 38.h,
+                        padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            /// Minus button
+                            GestureDetector(
+                              onTap: () => controller.decreaseQuantity(product),
+                              child: Container(
+                                width: 28.w,
+                                height: 28.w,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.remove, size: 14, color: Color(0xFF4B5563)),
+                                ),
+                              ),
+                            ),
+
+                            /// Current count
+                            Text(
+                              '$qty',
+                              style: GoogleFonts.inter(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+
+                            /// Plus button
+                            GestureDetector(
+                              onTap: () => controller.increaseQuantity(product),
+                              child: Container(
+                                width: 28.w,
+                                height: 28.w,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryAmber,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.add, size: 14, color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 38.h,
+                      child: ElevatedButton(
+                        onPressed: () => controller.increaseQuantity(product),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryAmber,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14.r),
+                          ),
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(
+                          'Add to Cart',
+                          style: GoogleFonts.inter(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -591,7 +663,6 @@ class EmployeeHomeScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    /// Thumbnail
                     ClipRRect(
                       borderRadius: BorderRadius.circular(16.r),
                       child: SizedBox(
@@ -614,8 +685,6 @@ class EmployeeHomeScreen extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 14.w),
-
-                    /// Info
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,10 +751,15 @@ class EmployeeHomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-
-                    /// Add (+) Button
                     GestureDetector(
-                      onTap: () => controller.addToCart(deal.name),
+                      onTap: () {
+                        // Find matching product or increment
+                        final match = controller.allProducts.firstWhere(
+                          (p) => p.name.toLowerCase() == deal.name.toLowerCase(),
+                          orElse: () => controller.allProducts.first,
+                        );
+                        controller.increaseQuantity(match);
+                      },
                       child: Container(
                         width: 40.w,
                         height: 40.w,
