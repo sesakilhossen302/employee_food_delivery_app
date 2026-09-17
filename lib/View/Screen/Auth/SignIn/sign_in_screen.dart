@@ -1,0 +1,552 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../Utils/AppColors/app_colors.dart';
+import 'Controller/sign_in_controller.dart';
+
+class SignInScreen extends StatelessWidget {
+  const SignInScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final SignInController controller = Get.put(SignInController());
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: Form(
+              key: controller.formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(height: 24.h),
+
+                  /// Brand Gas Station Icon
+                  Container(
+                    width: 64.w,
+                    height: 64.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryColor,
+                      borderRadius: BorderRadius.circular(18.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryColor.withValues(alpha: 0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.local_gas_station_rounded,
+                        color: Colors.white,
+                        size: 34.sp,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16.h),
+
+                  /// App Title
+                  Text(
+                    'QuickStop',
+                    style: GoogleFonts.poppins(
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  SizedBox(height: 4.h),
+
+                  /// Subtitle
+                  Text(
+                    'Gas Station Delivery',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  SizedBox(height: 32.h),
+
+                  /// Tab Toggle: Sign In / Sign Up
+                  Obx(() => Container(
+                        height: 48.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: const Color(0xFFE5E7EB),
+                            width: 1.2,
+                          ),
+                        ),
+                        padding: EdgeInsets.all(4.w),
+                        child: Row(
+                          children: [
+                            /// Sign In Tab
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => controller.toggleTab(0),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  decoration: BoxDecoration(
+                                    color: controller.selectedTab.value == 0
+                                        ? AppColors.primaryColor
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Sign In',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: controller.selectedTab.value == 0
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            /// Sign Up Tab
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => controller.toggleTab(1),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeInOut,
+                                  decoration: BoxDecoration(
+                                    color: controller.selectedTab.value == 1
+                                        ? AppColors.primaryColor
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8.r),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'Sign Up',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: controller.selectedTab.value == 1
+                                          ? Colors.white
+                                          : const Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                  SizedBox(height: 28.h),
+
+                  /// Dynamic Content based on selected tab
+                  Obx(() {
+                    if (controller.selectedTab.value == 0) {
+                      return _buildSignInForm(controller);
+                    } else {
+                      return _buildSignUpForm(controller);
+                    }
+                  }),
+
+                  SizedBox(height: 24.h),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sign In Form matching exactly the design
+  Widget _buildSignInForm(SignInController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Email Label
+        Text(
+          'Email',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+
+        /// Email Input
+        TextFormField(
+          controller: controller.emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            color: const Color(0xFF111827),
+          ),
+          decoration: _inputDecoration(
+            hintText: 'you@example.com',
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your email';
+            }
+            if (!GetUtils.isEmail(value.trim())) {
+              return 'Please enter a valid email address';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: 20.h),
+
+        /// Password Header Row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Password',
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF1F2937),
+              ),
+            ),
+            GestureDetector(
+              onTap: controller.handleForgotPassword,
+              child: Text(
+                'Forgot password?',
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8.h),
+
+        /// Password Input
+        Obx(() => TextFormField(
+              controller: controller.passwordController,
+              obscureText: controller.isPasswordHidden.value,
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                color: const Color(0xFF111827),
+              ),
+              decoration: _inputDecoration(
+                hintText: '••••••••',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    controller.isPasswordHidden.value
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                    size: 20.sp,
+                  ),
+                  onPressed: controller.togglePasswordVisibility,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter your password';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            )),
+        SizedBox(height: 28.h),
+
+        /// Sign In Button
+        Obx(() => SizedBox(
+              width: double.infinity,
+              height: 50.h,
+              child: ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.handleSignIn,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.primaryColor.withValues(alpha: 0.6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                child: controller.isLoading.value
+                    ? SizedBox(
+                        height: 22.h,
+                        width: 22.w,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'Sign In',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            )),
+      ],
+    );
+  }
+
+  /// Sign Up Form (Smooth toggle)
+  Widget _buildSignUpForm(SignInController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// Full Name
+        Text(
+          'Full Name',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: controller.nameController,
+          keyboardType: TextInputType.name,
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            color: const Color(0xFF111827),
+          ),
+          decoration: _inputDecoration(hintText: 'John Doe'),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your full name';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: 18.h),
+
+        /// Email
+        Text(
+          'Email',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: controller.emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            color: const Color(0xFF111827),
+          ),
+          decoration: _inputDecoration(hintText: 'you@example.com'),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Please enter your email';
+            }
+            if (!GetUtils.isEmail(value.trim())) {
+              return 'Please enter a valid email address';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: 18.h),
+
+        /// Phone Number
+        Text(
+          'Phone Number',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        TextFormField(
+          controller: controller.phoneController,
+          keyboardType: TextInputType.phone,
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            color: const Color(0xFF111827),
+          ),
+          decoration: _inputDecoration(hintText: '+1 (555) 000-0000'),
+        ),
+        SizedBox(height: 18.h),
+
+        /// Password
+        Text(
+          'Password',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Obx(() => TextFormField(
+              controller: controller.passwordController,
+              obscureText: controller.isPasswordHidden.value,
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                color: const Color(0xFF111827),
+              ),
+              decoration: _inputDecoration(
+                hintText: '••••••••',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    controller.isPasswordHidden.value
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                    size: 20.sp,
+                  ),
+                  onPressed: controller.togglePasswordVisibility,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please enter a password';
+                }
+                if (value.length < 6) {
+                  return 'Password must be at least 6 characters';
+                }
+                return null;
+              },
+            )),
+        SizedBox(height: 18.h),
+
+        /// Confirm Password
+        Text(
+          'Confirm Password',
+          style: GoogleFonts.poppins(
+            fontSize: 14.sp,
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF1F2937),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Obx(() => TextFormField(
+              controller: controller.confirmPasswordController,
+              obscureText: controller.isConfirmPasswordHidden.value,
+              style: GoogleFonts.poppins(
+                fontSize: 14.sp,
+                color: const Color(0xFF111827),
+              ),
+              decoration: _inputDecoration(
+                hintText: '••••••••',
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    controller.isConfirmPasswordHidden.value
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: const Color(0xFF9CA3AF),
+                    size: 20.sp,
+                  ),
+                  onPressed: controller.toggleConfirmPasswordVisibility,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Please confirm your password';
+                }
+                if (value != controller.passwordController.text) {
+                  return 'Passwords do not match';
+                }
+                return null;
+              },
+            )),
+        SizedBox(height: 28.h),
+
+        /// Sign Up Button
+        Obx(() => SizedBox(
+              width: double.infinity,
+              height: 50.h,
+              child: ElevatedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : controller.handleSignUp,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryColor,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor:
+                      AppColors.primaryColor.withValues(alpha: 0.6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                child: controller.isLoading.value
+                    ? SizedBox(
+                        height: 22.h,
+                        width: 22.w,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2.2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(
+                        'Sign Up',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+              ),
+            )),
+      ],
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String hintText,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: GoogleFonts.poppins(
+        fontSize: 14.sp,
+        color: const Color(0xFF9CA3AF),
+        fontWeight: FontWeight.w400,
+      ),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      suffixIcon: suffixIcon,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.2),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(color: AppColors.primaryColor, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10.r),
+        borderSide: const BorderSide(color: Colors.red, width: 1.2),
+      ),
+    );
+  }
+}

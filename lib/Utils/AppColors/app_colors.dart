@@ -3,6 +3,18 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AppColors {
+  /// Brand Colors
+  static const Color primaryColor = Color(0xFFF59E0B);
+  static const Color primaryAmber = Color(0xFFF59E0B);
+  static const Color primaryOrange = Color(0xFFF59E0B);
+  static const Color brandDark = Color(0xFF111827);
+  static const Color scaffoldBackground = Color(0xFFF9FAFB);
+  static const Color fieldFill = Color(0xFFFFFFFF);
+  static const Color fieldBorder = Color(0xFFE5E7EB);
+  static const Color textDark = Color(0xFF1F2937);
+  static const Color textMuted = Color(0xFF6B7280);
+  static const Color textHint = Color(0xFF9CA3AF);
+
 
   static const Color tColor =  Color(0xffF5F5F5);
   static const Color abcd=Color(0xffF5F5F5);
