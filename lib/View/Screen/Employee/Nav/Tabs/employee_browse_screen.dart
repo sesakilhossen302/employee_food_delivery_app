@@ -231,7 +231,7 @@ class EmployeeBrowseScreen extends StatelessWidget {
                     crossAxisCount: 2,
                     crossAxisSpacing: 12.w,
                     mainAxisSpacing: 14.h,
-                    childAspectRatio: 0.65,
+                    childAspectRatio: 0.58,
                   ),
                   itemCount: list.length,
                   itemBuilder: (context, index) {
@@ -273,7 +273,7 @@ class EmployeeBrowseScreen extends StatelessWidget {
               borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
               child: SizedBox(
                 width: double.infinity,
-                height: 125.h,
+                height: 118.h,
                 child: Image.network(
                   product.imageUrl,
                   fit: BoxFit.cover,
@@ -336,7 +336,7 @@ class EmployeeBrowseScreen extends StatelessWidget {
                     if (qty > 0) {
                       /// Stepper widget matching Image 1 & Image 3: [-]  qty  [+]
                       return Container(
-                        height: 38.h,
+                        height: 36.h,
                         padding: EdgeInsets.symmetric(horizontal: 4.w),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF9FAFB),
@@ -396,7 +396,7 @@ class EmployeeBrowseScreen extends StatelessWidget {
                     /// Initial "Add to Cart" Button
                     return SizedBox(
                       width: double.infinity,
-                      height: 38.h,
+                      height: 36.h,
                       child: ElevatedButton(
                         onPressed: () => controller.increaseQuantity(product),
                         style: ElevatedButton.styleFrom(
