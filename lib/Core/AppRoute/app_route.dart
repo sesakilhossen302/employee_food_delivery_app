@@ -4,6 +4,7 @@ import '../../View/Screen/Profile/terms_and_conditions_screen.dart';
 import '../../View/Screen/Profile/privacy_policy_screen.dart';
 import '../../View/Screen/Profile/help_support_screen.dart';
 import '../../View/Screen/Profile/my_addresses_screen.dart';
+import '../../View/Screen/Profile/location_picker_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/create_new_password_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/forgot_password_screen.dart';
 import '../../View/Screen/Auth/ForgotPassword/reset_password_otp_screen.dart';
@@ -51,6 +52,7 @@ class AppRoute {
   static const String privacyPolicyScreen = '/privacy_policy_screen';
   static const String helpSupportScreen = '/help_support_screen';
   static const String myAddressesScreen = '/my_addresses_screen';
+  static const String locationPickerScreen = '/location_picker_screen';
 
 
   static List<GetPage> routes = [

@@ -702,22 +702,25 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.r),
-                      child: Image.network(
-                        item.imageUrl.isNotEmpty ? item.imageUrl : OrderItemModel.fallbackImageFor(item.name),
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.network(
-                            OrderItemModel.fallbackImageFor(item.name),
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => Container(
+                      child: item.imageUrl.isNotEmpty
+                          ? Image.network(
+                              item.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: const Color(0xFFFEF3C7),
+                                  child: const Center(
+                                    child: Icon(Icons.fastfood_rounded, size: 24, color: AppColors.primaryAmber),
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
                               color: const Color(0xFFFEF3C7),
                               child: const Center(
                                 child: Icon(Icons.fastfood_rounded, size: 24, color: AppColors.primaryAmber),
                               ),
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ),
                   SizedBox(width: 12.w),

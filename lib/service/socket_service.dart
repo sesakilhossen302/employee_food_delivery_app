@@ -58,6 +58,32 @@ class SocketApi {
     }
   }
 
+  /// Emit Driver Location for Real-Time Tracking
+  static void emitDriverLocation({
+    required String driverId,
+    required String orderId,
+    required double lat,
+    required double lng,
+    double? heading,
+    double? speed,
+  }) {
+    if (socket.connected) {
+      final payload = {
+        'driverId': driverId,
+        'orderId': orderId,
+        'lat': lat,
+        'lng': lng,
+        if (heading != null) 'heading': heading,
+        if (speed != null) 'speed': speed,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+      socket.emit('driver_location', payload);
+      debugPrint('Emitted driver location: $payload');
+    } else {
+      debugPrint('Socket not connected. Cannot emit location.');
+    }
+  }
+
   static final SocketApi _socketApi = SocketApi._internal();
 
 }

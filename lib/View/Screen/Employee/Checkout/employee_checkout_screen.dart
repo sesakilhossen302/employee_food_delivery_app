@@ -41,6 +41,17 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
   }
 
   @override
+  
+  double _parseCoord(String text, int index, double fallback) {
+    if (text.contains(',')) {
+      final parts = text.split(',');
+      if (parts.length == 2) {
+        return double.tryParse(parts[index].trim()) ?? fallback;
+      }
+    }
+    return fallback;
+  }
+  
   Widget build(BuildContext context) {
     final controller = Get.find<EmployeeHomeController>();
 
@@ -633,6 +644,8 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
           "address": isDelivery ? streetController.text.trim() : "QuickStop Gas Station, 1250 Highway Blvd",
           "instructions": instructionsController.text.trim(),
           "distanceKm": 3.2,
+            "lat": 46.8920,
+            "lng": -96.8050,
         },
         "fulfillmentType": isDelivery ? "delivery" : "pickup",
         "items": controller.cartItems.map((entry) => {

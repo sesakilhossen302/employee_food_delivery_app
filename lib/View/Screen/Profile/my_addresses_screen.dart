@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import 'Controller/profile_controller.dart';
+import '../../../../Core/AppRoute/app_route.dart';
 
 class MyAddressesScreen extends StatelessWidget {
   const MyAddressesScreen({super.key});
@@ -232,7 +233,7 @@ class MyAddressesScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 50.h,
                 child: OutlinedButton.icon(
-                  onPressed: () => _showAddAddressDialog(context, controller),
+                  onPressed: () => Get.toNamed(AppRoute.locationPickerScreen),
                   icon: const Icon(Icons.add_rounded, color: AppColors.primaryAmber),
                   label: Text('Add New Address', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.primaryAmber)),
                   style: OutlinedButton.styleFrom(
