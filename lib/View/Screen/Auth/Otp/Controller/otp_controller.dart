@@ -4,7 +4,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import '../../../../../Core/AppRoute/app_route.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
+import '../../../../../Utils/AppConst/app_const.dart';
 import '../../../../../helper/shared_prefe/shared_prefe.dart';
+import '../../../../../service/api_client.dart';
+import '../../../../../service/api_url.dart';
 
 class OtpController extends GetxController {
   final TextEditingController pinController = TextEditingController();
@@ -61,12 +64,35 @@ class OtpController extends GetxController {
   Future<void> resendOtp() async {
     if (!canResend.value) return;
 
-    Fluttertoast.showToast(
-      msg: 'A new 6-digit verification code has been sent to ${userEmail.value}',
-      backgroundColor: AppColors.primaryColor,
-      textColor: Colors.white,
-    );
-    startCountdown();
+    isLoading.value = true;
+    try {
+      final res = await ApiClient.postData(ApiConstant.sendOtp, {
+        'email': userEmail.value,
+      });
+
+      if (res.statusCode == 200) {
+        Fluttertoast.showToast(
+          msg: 'A new 6-digit verification code has been sent to ${userEmail.value}',
+          backgroundColor: AppColors.primaryColor,
+          textColor: Colors.white,
+        );
+        startCountdown();
+      } else {
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Failed to resend code',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Failed to send OTP: $e',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> verifyOtp() async {
@@ -82,21 +108,36 @@ class OtpController extends GetxController {
 
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(milliseconds: 1400));
+      final res = await ApiClient.postData(ApiConstant.verifyOtp, {
+        'email': userEmail.value,
+        'otp': code,
+      });
 
-      Fluttertoast.showToast(
-        msg: 'Email verified successfully as ${userRole.value}!',
-        backgroundColor: AppColors.primaryColor,
-        textColor: Colors.white,
-      );
+      if (res.statusCode == 200 && res.body != null && res.body['success'] == true) {
+        final token = res.body['token']?.toString() ?? '';
+        if (token.isNotEmpty) {
+          await SharePrefsHelper.setString(AppConstants.bearerToken, token);
+          await SharePrefsHelper.setString(SharedPreferenceValue.token, token);
+        }
 
-      // Check role: If Employee, navigate to EmployeeHomeScreen
-            // Check role routing: Driver vs Employee
-      final role = userRole.value.trim().toLowerCase();
-      if (role == 'driver') {
-        Get.offAllNamed(AppRoute.driverNavScreen);
+        Fluttertoast.showToast(
+          msg: 'Email verified successfully as ${userRole.value}!',
+          backgroundColor: AppColors.primaryColor,
+          textColor: Colors.white,
+        );
+
+        final role = userRole.value.trim().toLowerCase();
+        if (role == 'driver') {
+          Get.offAllNamed(AppRoute.driverNavScreen);
+        } else {
+          Get.offAllNamed(AppRoute.employeeNavScreen);
+        }
       } else {
-        Get.offAllNamed(AppRoute.employeeNavScreen);
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Invalid or expired OTP',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
       }
     } catch (e) {
       Fluttertoast.showToast(

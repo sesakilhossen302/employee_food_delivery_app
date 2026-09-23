@@ -10,6 +10,7 @@ enum DriverOrderStatus {
 
 class DriverOrderModel {
   final String id;
+  final String? backendId;
   final String customerName;
   final String customerPhone;
   final String pickupAddress;
@@ -26,6 +27,7 @@ class DriverOrderModel {
 
   DriverOrderModel({
     required this.id,
+    this.backendId,
     required this.customerName,
     required this.customerPhone,
     required this.pickupAddress,
@@ -40,6 +42,67 @@ class DriverOrderModel {
     this.timeEst = '20–30 min',
     required this.orderTime,
   });
+
+  factory DriverOrderModel.fromJson(Map<String, dynamic> json) {
+    final statusStr = (json['status'] ?? '').toString().toLowerCase();
+    DriverOrderStatus parsedStatus = DriverOrderStatus.readyForPickup;
+    if (statusStr == 'delivered') {
+      parsedStatus = DriverOrderStatus.delivered;
+    } else if (statusStr == 'out_for_delivery') {
+      parsedStatus = DriverOrderStatus.onTheWay;
+    } else if (statusStr == 'ready_for_driver' || statusStr == 'picking_up') {
+      parsedStatus = DriverOrderStatus.pickingUp;
+    }
+
+    final customer = json['customer'] is Map ? json['customer'] : {};
+    final pricing = json['pricing'] is Map ? json['pricing'] : {};
+
+    final List<String> parsedItems = [];
+    if (json['items'] is List) {
+      for (var item in json['items']) {
+        if (item is Map) {
+          final qty = item['quantity'] ?? 1;
+          final name = item['name'] ?? 'Item';
+          parsedItems.add('$qty× $name');
+        }
+      }
+    }
+
+    String formattedTime = 'Recent';
+    if (json['createdAt'] != null) {
+      try {
+        final dt = DateTime.parse(json['createdAt'].toString());
+        final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+        final period = dt.hour >= 12 ? 'p.m.' : 'a.m.';
+        final min = dt.minute.toString().padLeft(2, '0');
+        formattedTime = '$hour:$min $period';
+      } catch (_) {
+        formattedTime = json['createdAt'].toString();
+      }
+    }
+
+    final double fee = (pricing['deliveryFee'] ?? json['deliveryFee'] ?? 3.99).toDouble();
+    final double tipVal = (pricing['tip'] ?? json['tip'] ?? 0.0).toDouble();
+    final double totalVal = (json['total'] ?? pricing['total'] ?? 0.0).toDouble();
+
+    return DriverOrderModel(
+      id: json['orderNumber'] ?? (json['_id'] != null ? '#${json['_id'].toString().substring(json['_id'].toString().length - 6).toUpperCase()}' : '#ORD-LIVE'),
+      backendId: json['_id']?.toString() ?? json['id']?.toString(),
+      customerName: customer['name'] ?? json['customerName'] ?? 'Customer',
+      customerPhone: customer['phone'] ?? json['customerPhone'] ?? '(555) 000-0000',
+      pickupAddress: 'QuickStop Gas Station, 1250 Highway Blvd',
+      deliveryAddress: customer['deliveryAddress'] ?? json['deliveryAddress'] ?? 'Springfield Area',
+      distance: json['distance'] ?? '2.5 km',
+      deliveryFee: fee,
+      tip: tipVal,
+      totalCashToCollect: totalVal,
+      deliveryInstructions: customer['deliveryInstructions'] ?? json['deliveryInstructions'] ?? 'Collect cash upon delivery',
+      items: parsedItems.isNotEmpty ? parsedItems : ['Order Package'],
+      status: parsedStatus,
+      timeEst: '15–25 min',
+      orderTime: formattedTime,
+    );
+  }
 
   double get driverEarning => deliveryFee + tip;
 

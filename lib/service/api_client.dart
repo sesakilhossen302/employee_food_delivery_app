@@ -20,16 +20,22 @@ class ApiClient extends GetxService {
 
   static String bearerToken = "";
 
+  static Future<String> _getAuthToken() async {
+    String token = await SharePrefsHelper.getString(AppConstants.bearerToken);
+    if (token.isEmpty) {
+      token = await SharePrefsHelper.getString('token');
+    }
+    return token;
+  }
+
   ///<======================== This is for get methode =======================>
   static Future<Response> getData(String uri,
       {Map<String, dynamic>? query, Map<String, String>? headers}) async {
-    bearerToken = await SharePrefsHelper.getString(AppConstants.bearerToken);
+    bearerToken = await _getAuthToken();
 
     var mainHeaders = {
-      //'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
-
-      'Authorization': 'Bearer $bearerToken'
+      if (bearerToken.isNotEmpty) 'Authorization': 'Bearer $bearerToken'
     };
     try {
       debugPrint('====> API Call: $uri\nHeader: ${headers ?? mainHeaders}');
@@ -50,25 +56,24 @@ class ApiClient extends GetxService {
 
   ///<====================== This is for post methode ========================>
   static Future<Response> postData(String uri, dynamic body,
-      {Map<String, String>? headers})async{
-    bearerToken = await SharePrefsHelper.getString(AppConstants.bearerToken);
+      {Map<String, String>? headers}) async {
+    bearerToken = await _getAuthToken();
 
-    debugPrint("This one is the  base url=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-${ApiConstant.baseUrl}");
-
+    final payload = (body is Map) ? jsonEncode(body) : body;
 
     var mainHeaders = {
-      // 'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': 'Bearer $bearerToken'
+      if (bearerToken.isNotEmpty) 'Authorization': 'Bearer $bearerToken'
     };
     try {
       debugPrint('====> API Call: $uri\nHeader: ${headers ?? mainHeaders}');
-      debugPrint('====> API Body: $body');
+      debugPrint('====> API Body: $payload');
 
       http.Response response = await client
           .post(
         Uri.parse(ApiConstant.baseUrl + uri),
-        body: body,
+        body: payload,
         headers: headers ?? mainHeaders,
       )
        .timeout(const Duration(seconds: timeoutInSeconds));
@@ -83,21 +88,23 @@ class ApiClient extends GetxService {
   ///<====================== This is for patch methode ========================>
   static Future<Response> patchData(String uri, dynamic body,
       {Map<String, String>? headers}) async {
-    bearerToken = await SharePrefsHelper.getString(AppConstants.bearerToken);
+    bearerToken = await _getAuthToken();
+
+    final payload = (body is Map) ? jsonEncode(body) : body;
 
     var mainHeaders = {
-      // 'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
       'Accept': 'application/json',
-      'Authorization': 'Bearer $bearerToken'
+      if (bearerToken.isNotEmpty) 'Authorization': 'Bearer $bearerToken'
     };
     try {
       debugPrint('====> API Call: $uri\nHeader: ${headers ?? mainHeaders}');
-      debugPrint('====> API Body: $body');
+      debugPrint('====> API Body: $payload');
 
       http.Response response = await client
           .patch(
         Uri.parse(ApiConstant.baseUrl + uri),
-        body: body,
+        body: payload,
         headers: headers ?? mainHeaders,
       )
           .timeout(const Duration(seconds: timeoutInSeconds));

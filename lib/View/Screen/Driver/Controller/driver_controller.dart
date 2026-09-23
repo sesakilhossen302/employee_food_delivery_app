@@ -1,25 +1,46 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
+import '../../../../service/api_client.dart';
+import '../../../../service/api_url.dart';
+import '../../../../service/socket_service.dart';
 import '../Model/driver_order_model.dart';
 
 class DriverController extends GetxController {
   final RxInt currentNavIndex = 0.obs;
   final RxBool isOnline = true.obs;
+  final RxBool isLoading = false.obs;
 
   final RxList<DriverOrderModel> availableOrders = <DriverOrderModel>[].obs;
   final Rx<DriverOrderModel?> activeOrder = Rx<DriverOrderModel?>(null);
   final RxList<DriverOrderModel> completedDeliveries = <DriverOrderModel>[].obs;
 
-  final RxDouble todayEarnings = 48.50.obs;
-  final RxDouble cashCollectedInHand = 142.30.obs;
-  final RxInt completedCount = 6.obs;
+  final RxDouble todayEarnings = 0.0.obs;
+  final RxDouble cashCollectedInHand = 0.0.obs;
+  final RxInt completedCount = 0.obs;
 
   @override
   void onInit() {
     super.onInit();
-    _loadInitialDriverData();
+    fetchDriverData();
+    _initSocket();
+  }
+
+  void _initSocket() {
+    try {
+      SocketService.socket.on('order_status_updated', (data) {
+        debugPrint('DriverController socket order_status_updated: $data');
+        fetchDriverData();
+      });
+      SocketService.socket.on('new_order', (data) {
+        debugPrint('DriverController socket new_order: $data');
+        fetchDriverData();
+      });
+    } catch (e) {
+      debugPrint('DriverController socket warning: $e');
+    }
   }
 
   void changeNavIndex(int index) {
@@ -37,20 +58,67 @@ class DriverController extends GetxController {
     );
   }
 
-  void acceptOrder(DriverOrderModel order) {
+  Future<void> fetchDriverData() async {
+    isLoading.value = true;
+    try {
+      // 1. Fetch live driver stats from backend
+      final statsRes = await ApiClient.getData(ApiConstant.driverStats);
+      if (statsRes.statusCode == 200 && statsRes.body != null && statsRes.body['data'] != null) {
+        final data = statsRes.body['data'];
+        completedCount.value = (data['completedDeliveries'] ?? 0) as int;
+        todayEarnings.value = (data['totalEarnings'] ?? data['totalTips'] ?? 0.0).toDouble();
+        cashCollectedInHand.value = (data['totalCashCollected'] ?? 0.0).toDouble();
+      }
+
+      // 2. Fetch live active/available orders from backend
+      final ordersRes = await ApiClient.getData(ApiConstant.driverActiveOrders);
+      if (ordersRes.statusCode == 200 && ordersRes.body != null && ordersRes.body['data'] is List) {
+        final List list = ordersRes.body['data'];
+        final List<DriverOrderModel> allParsed = list.map((o) => DriverOrderModel.fromJson(o)).toList();
+
+        final active = allParsed.firstWhereOrNull((o) =>
+            o.status == DriverOrderStatus.pickingUp ||
+            o.status == DriverOrderStatus.onTheWay ||
+            o.status == DriverOrderStatus.arrived);
+        activeOrder.value = active;
+
+        final available = allParsed.where((o) =>
+            o.status == DriverOrderStatus.readyForPickup &&
+            (active == null || o.id != active.id)).toList();
+        availableOrders.assignAll(available);
+
+        final delivered = allParsed.where((o) => o.status == DriverOrderStatus.delivered).toList();
+        completedDeliveries.assignAll(delivered);
+      }
+    } catch (e) {
+      debugPrint('DriverController fetchDriverData error: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> acceptOrder(DriverOrderModel order) async {
     availableOrders.removeWhere((o) => o.id == order.id);
     order.status = DriverOrderStatus.pickingUp;
     activeOrder.value = order;
-    currentNavIndex.value = 0; // Go to Deliveries tab where active delivery is shown
+    currentNavIndex.value = 0; // Deliveries tab
 
     Fluttertoast.showToast(
       msg: 'Accepted Order ${order.id}. Head to QuickStop Gas Station for pickup!',
       backgroundColor: AppColors.primaryAmber,
       textColor: Colors.white,
     );
+
+    // Persist to backend
+    if (order.backendId != null && order.backendId!.isNotEmpty) {
+      await ApiClient.patchData(
+        '${ApiConstant.orders}/${order.backendId}/status',
+        jsonEncode({'status': 'ready_for_driver'}),
+      );
+    }
   }
 
-  void confirmStorePickup() {
+  Future<void> confirmStorePickup() async {
     if (activeOrder.value == null) return;
     activeOrder.value!.status = DriverOrderStatus.onTheWay;
     activeOrder.refresh();
@@ -60,6 +128,14 @@ class DriverController extends GetxController {
       backgroundColor: const Color(0xFF2563EB),
       textColor: Colors.white,
     );
+
+    final backendId = activeOrder.value!.backendId;
+    if (backendId != null && backendId.isNotEmpty) {
+      await ApiClient.patchData(
+        '${ApiConstant.orders}/$backendId/status',
+        jsonEncode({'status': 'out_for_delivery'}),
+      );
+    }
   }
 
   void markArrived() {
@@ -74,7 +150,7 @@ class DriverController extends GetxController {
     );
   }
 
-  void completeDeliveryAndCollectCash() {
+  Future<void> completeDeliveryAndCollectCash() async {
     if (activeOrder.value == null) return;
     final order = activeOrder.value!;
     order.status = DriverOrderStatus.delivered;
@@ -91,55 +167,14 @@ class DriverController extends GetxController {
       backgroundColor: const Color(0xFF10B981),
       textColor: Colors.white,
     );
-  }
 
-  void _loadInitialDriverData() {
-    availableOrders.assignAll([
-      DriverOrderModel(
-        id: '#ORD-1004',
-        customerName: 'Sarah Jenkins',
-        customerPhone: '(555) 234-5678',
-        pickupAddress: 'QuickStop Gas Station, 1250 Highway Blvd',
-        deliveryAddress: '456 Pine Ave, Springfield, S4P 1T2',
-        distance: '2.4 km',
-        deliveryFee: 3.99,
-        tip: 2.50,
-        totalCashToCollect: 24.85,
-        deliveryInstructions: 'Leave at front door, call when you arrive',
-        items: ['1× Coca-Cola 6-Pack', '1× Doritos Nacho Cheese', '1× Dasani Water'],
-        orderTime: '09:15 p.m.',
-      ),
-      DriverOrderModel(
-        id: '#ORD-1005',
-        customerName: 'Marcus Miller',
-        customerPhone: '(555) 876-5432',
-        pickupAddress: 'QuickStop Gas Station, 1250 Highway Blvd',
-        deliveryAddress: '789 Oak St, Apt 4B, Springfield, S4P 4K8',
-        distance: '4.8 km',
-        deliveryFee: 4.99,
-        tip: 3.00,
-        totalCashToCollect: 32.40,
-        deliveryInstructions: 'Meet me in the lobby, buzz 402',
-        items: ['2× Red Bull Original', '2× Party Ice Bag', '1× Weekend Deal Bundle'],
-        orderTime: '09:22 p.m.',
-      ),
-    ]);
-
-    // Active order already in progress matching the PDF specification (#ORD-1001)
-    activeOrder.value = DriverOrderModel(
-      id: '#ORD-1001',
-      customerName: 'Customer',
-      customerPhone: '(555) 123-4567',
-      pickupAddress: 'QuickStop Gas Station, 1250 Highway Blvd',
-      deliveryAddress: '123 Maple St, Springfield, S4P 3Y2',
-      distance: '3.2 km',
-      deliveryFee: 3.99,
-      tip: 2.00,
-      totalCashToCollect: 18.48,
-      deliveryInstructions: 'Leave at front door, call when you arrive',
-      items: ['2× Red Bull Original', '1× Lay\'s Classic'],
-      status: DriverOrderStatus.onTheWay,
-      orderTime: '08:32 p.m.',
-    );
+    // Persist delivery completion to backend
+    if (order.backendId != null && order.backendId!.isNotEmpty) {
+      await ApiClient.patchData(
+        '${ApiConstant.orders}/${order.backendId}/status',
+        jsonEncode({'status': 'delivered', 'paymentStatus': 'paid'}),
+      );
+    }
+    fetchDriverData();
   }
 }

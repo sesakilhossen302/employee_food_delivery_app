@@ -51,8 +51,63 @@ class EmployeeOrdersScreen extends StatelessWidget {
 
             /// 2. Orders List
             Expanded(
-              child: Obx(
-                () => RefreshIndicator(
+              child: Obx(() {
+                if (controller.isLoading.value && controller.orders.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primaryAmber),
+                  );
+                }
+
+                if (controller.orders.isEmpty) {
+                  return RefreshIndicator(
+                    color: AppColors.primaryAmber,
+                    onRefresh: controller.loadOrders,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      child: Container(
+                        height: 480.h,
+                        alignment: Alignment.center,
+                        padding: EdgeInsets.symmetric(horizontal: 24.w),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 76.w,
+                              height: 76.w,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFEF3C7),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Center(
+                                child: Icon(Icons.receipt_long_rounded, color: AppColors.primaryAmber, size: 36),
+                              ),
+                            ),
+                            SizedBox(height: 16.h),
+                            Text(
+                              'No Orders Placed Yet',
+                              style: GoogleFonts.inter(
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              'Your placed orders will show up here with live status tracking.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.sp,
+                                color: const Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
                   color: AppColors.primaryAmber,
                   onRefresh: controller.loadOrders,
                   child: ListView.separated(
@@ -65,8 +120,8 @@ class EmployeeOrdersScreen extends StatelessWidget {
                       return _buildOrderCard(order);
                     },
                   ),
-                ),
-              ),
+                );
+              }),
             ),
           ],
         ),

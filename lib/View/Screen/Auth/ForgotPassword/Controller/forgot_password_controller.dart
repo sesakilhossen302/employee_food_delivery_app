@@ -4,6 +4,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import '../../../../../Core/AppRoute/app_route.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
+import '../../../../../service/api_client.dart';
+import '../../../../../service/api_url.dart';
 
 class ForgotPasswordController extends GetxController {
   final GlobalKey<FormState> emailFormKey = GlobalKey<FormState>();
@@ -59,19 +61,30 @@ class ForgotPasswordController extends GetxController {
     isLoading.value = true;
 
     try {
-      await Future.delayed(const Duration(milliseconds: 1200));
-      startCountdown();
+      final res = await ApiClient.postData(ApiConstant.forgotPassword, {
+        'email': email,
+      });
 
-      Fluttertoast.showToast(
-        msg: 'A 6-digit verification code has been sent to $email',
-        backgroundColor: AppColors.primaryColor,
-        textColor: Colors.white,
-      );
+      if (res.statusCode == 200) {
+        startCountdown();
 
-      Get.toNamed(AppRoute.resetPasswordOtpScreen);
+        Fluttertoast.showToast(
+          msg: 'A 6-digit verification code has been sent to $email',
+          backgroundColor: AppColors.primaryColor,
+          textColor: Colors.white,
+        );
+
+        Get.toNamed(AppRoute.resetPasswordOtpScreen);
+      } else {
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Failed to send verification code',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Failed to send verification code. Please try again.',
+        msg: 'Failed to send verification code: $e',
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -83,12 +96,35 @@ class ForgotPasswordController extends GetxController {
   Future<void> resendOtp() async {
     if (!canResend.value) return;
 
-    Fluttertoast.showToast(
-      msg: 'New verification code sent to ${emailController.text.trim()}',
-      backgroundColor: AppColors.primaryColor,
-      textColor: Colors.white,
-    );
-    startCountdown();
+    isLoading.value = true;
+    try {
+      final res = await ApiClient.postData(ApiConstant.forgotPassword, {
+        'email': emailController.text.trim(),
+      });
+
+      if (res.statusCode == 200) {
+        Fluttertoast.showToast(
+          msg: 'New verification code sent to ${emailController.text.trim()}',
+          backgroundColor: AppColors.primaryColor,
+          textColor: Colors.white,
+        );
+        startCountdown();
+      } else {
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Failed to resend code',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Failed to resend OTP: $e',
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> verifyResetOtp() async {
@@ -104,18 +140,29 @@ class ForgotPasswordController extends GetxController {
 
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(milliseconds: 1200));
+      final res = await ApiClient.postData(ApiConstant.verifyOtp, {
+        'email': emailController.text.trim(),
+        'otp': code,
+      });
 
-      Fluttertoast.showToast(
-        msg: 'OTP verified successfully!',
-        backgroundColor: const Color(0xFF10B981),
-        textColor: Colors.white,
-      );
+      if (res.statusCode == 200) {
+        Fluttertoast.showToast(
+          msg: 'OTP verified successfully!',
+          backgroundColor: const Color(0xFF10B981),
+          textColor: Colors.white,
+        );
 
-      Get.toNamed(AppRoute.createNewPasswordScreen);
+        Get.toNamed(AppRoute.createNewPasswordScreen);
+      } else {
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Invalid verification code',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Invalid verification code',
+        msg: 'Verification failed: $e',
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -129,10 +176,15 @@ class ForgotPasswordController extends GetxController {
 
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(milliseconds: 1400));
+      final res = await ApiClient.postData(ApiConstant.resetPassword, {
+        'email': emailController.text.trim(),
+        'otp': pinController.text.trim(),
+        'newPassword': newPasswordController.text.trim(),
+      });
 
-      Get.dialog(
-        Dialog(
+      if (res.statusCode == 200) {
+        Get.dialog(
+          Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
@@ -184,8 +236,15 @@ class ForgotPasswordController extends GetxController {
             ),
           ),
         ),
-        barrierDismissible: false,
-      );
+          barrierDismissible: false,
+        );
+      } else {
+        Fluttertoast.showToast(
+          msg: res.body?['message'] ?? 'Failed to reset password',
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+        );
+      }
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Failed to reset password: $e',

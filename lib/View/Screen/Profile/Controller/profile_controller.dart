@@ -81,84 +81,42 @@ class SavedAddressModel {
     required this.note,
     this.isDefault = false,
   });
+
+  factory SavedAddressModel.fromJson(Map<String, dynamic> json) {
+    return SavedAddressModel(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      title: json['title'] ?? 'Home',
+      address: json['address'] ?? '',
+      note: json['instructions'] ?? json['note'] ?? '',
+      isDefault: json['isDefault'] ?? false,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'title': title,
+      'address': address,
+      'instructions': note,
+    };
+  }
 }
 
 class ProfileController extends GetxController {
-  final RxString userName = 'Alex Johnson'.obs;
-  final RxString userEmail = 'alex.johnson@quickstop.com'.obs;
-  final RxString userPhone = '+1 (555) 432-8910'.obs;
-  final RxString userAddress = '742 Evergreen Terr, Springfield'.obs;
+  final RxString userName = ''.obs;
+  final RxString userEmail = ''.obs;
+  final RxString userPhone = ''.obs;
+  final RxString userAddress = ''.obs;
   final RxString userRole = 'Customer'.obs;
   final RxString profileImagePath = ''.obs;
 
   final RxBool isLoading = false.obs;
   final ImagePicker _picker = ImagePicker();
 
-  /// Notifications List
-  final RxList<AppNotificationModel> notifications = <AppNotificationModel>[
-    AppNotificationModel(
-      id: 'N-101',
-      title: 'Order Ready for Pickup',
-      message: 'Order #ORD-8921 is packed and waiting at QuickStop Gas Station.',
-      time: '10 mins ago',
-      icon: Icons.storefront_rounded,
-      iconColor: const Color(0xFFD97706),
-      iconBgColor: const Color(0xFFFEF3C7),
-      category: 'order',
-      isRead: false,
-    ),
-    AppNotificationModel(
-      id: 'N-102',
-      title: 'Driver En Route',
-      message: 'Driver Mike is heading to your address with your cold drinks & snacks.',
-      time: '25 mins ago',
-      icon: Icons.delivery_dining_rounded,
-      iconColor: const Color(0xFF10B981),
-      iconBgColor: const Color(0xFFECFDF5),
-      category: 'delivery',
-      isRead: false,
-    ),
-    AppNotificationModel(
-      id: 'N-103',
-      title: 'Hand Cash Remittance Reminder',
-      message: 'Please remit .90 collected cash to Station #12 cashier at shift end.',
-      time: '2 hours ago',
-      icon: Icons.payments_rounded,
-      iconColor: const Color(0xFF2563EB),
-      iconBgColor: const Color(0xFFEFF6FF),
-      category: 'system',
-      isRead: true,
-    ),
-    AppNotificationModel(
-      id: 'N-104',
-      title: 'Fuel & Snacks Promo: 15% OFF',
-      message: 'Get 15% off all bakery and bottled coffee with your next fuel stop.',
-      time: '1 day ago',
-      icon: Icons.local_offer_rounded,
-      iconColor: const Color(0xFF8B5CF6),
-      iconBgColor: const Color(0xFFF3E8FF),
-      category: 'promo',
-      isRead: true,
-    ),
-  ].obs;
+  /// Live Notifications from Backend API (Zero static data)
+  final RxList<AppNotificationModel> notifications = <AppNotificationModel>[].obs;
 
-  /// Saved Addresses List
-  final RxList<SavedAddressModel> addresses = <SavedAddressModel>[
-    SavedAddressModel(
-      id: 'ADDR-1',
-      title: 'Home',
-      address: '742 Evergreen Terr, Springfield',
-      note: 'Leave at front porch next to doorbell',
-      isDefault: true,
-    ),
-    SavedAddressModel(
-      id: 'ADDR-2',
-      title: 'Work / Office',
-      address: 'Suite 4B, 1200 Industrial Pkwy, Springfield',
-      note: 'Call when arriving at reception gate',
-      isDefault: false,
-    ),
-  ].obs;
+  /// Live Saved Addresses from Backend API (Zero static data)
+  final RxList<SavedAddressModel> addresses = <SavedAddressModel>[].obs;
 
   int get unreadNotificationsCount => notifications.where((n) => !n.isRead).length;
 
@@ -167,6 +125,7 @@ class ProfileController extends GetxController {
     super.onInit();
     loadProfileData();
     loadNotifications();
+    loadAddresses();
   }
 
   Future<void> loadNotifications() async {
@@ -174,12 +133,22 @@ class ProfileController extends GetxController {
       final response = await ApiClient.getData(ApiConstant.notifications);
       if (response.statusCode == 200 && response.body != null && response.body['data'] is List) {
         final List list = response.body['data'];
-        if (list.isNotEmpty) {
-          notifications.assignAll(list.map((n) => AppNotificationModel.fromJson(n)).toList());
-        }
+        notifications.assignAll(list.map((n) => AppNotificationModel.fromJson(n)).toList());
       }
     } catch (e) {
       debugPrint('Load notifications error: $e');
+    }
+  }
+
+  Future<void> loadAddresses() async {
+    try {
+      final response = await ApiClient.getData(ApiConstant.address);
+      if (response.statusCode == 200 && response.body != null && response.body['data'] is List) {
+        final List list = response.body['data'];
+        addresses.assignAll(list.map((a) => SavedAddressModel.fromJson(a)).toList());
+      }
+    } catch (e) {
+      debugPrint('Load addresses error: $e');
     }
   }
 
@@ -334,21 +303,46 @@ class ProfileController extends GetxController {
     }
   }
 
-  void addAddress({
+  Future<void> addAddress({
     required String title,
     required String address,
     required String note,
-  }) {
-    addresses.add(
-      SavedAddressModel(
-        id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
-        title: title,
-        address: address,
-        note: note,
-        isDefault: addresses.isEmpty,
-      ),
-    );
-    Fluttertoast.showToast(msg: 'Address added successfully!');
+  }) async {
+    final payload = {
+      'title': title,
+      'address': address,
+      'instructions': note,
+    };
+
+    try {
+      final res = await ApiClient.postData(ApiConstant.address, payload);
+      if (res.statusCode == 200 && res.body != null && res.body['data'] is List) {
+        final List list = res.body['data'];
+        addresses.assignAll(list.map((a) => SavedAddressModel.fromJson(a)).toList());
+      } else {
+        addresses.add(
+          SavedAddressModel(
+            id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
+            title: title,
+            address: address,
+            note: note,
+            isDefault: addresses.isEmpty,
+          ),
+        );
+      }
+      Fluttertoast.showToast(msg: 'Address saved successfully!');
+    } catch (e) {
+      addresses.add(
+        SavedAddressModel(
+          id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
+          title: title,
+          address: address,
+          note: note,
+          isDefault: addresses.isEmpty,
+        ),
+      );
+      Fluttertoast.showToast(msg: 'Address saved!');
+    }
   }
 
   void setDefaultAddress(String id) {
