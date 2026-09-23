@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import '../../../../helper/shared_prefe/shared_prefe.dart';
+import '../../../../service/api_client.dart';
+import '../../../../service/api_url.dart';
 
 class AppNotificationModel {
   final String id;
@@ -27,6 +30,41 @@ class AppNotificationModel {
     required this.category,
     this.isRead = false,
   });
+
+  factory AppNotificationModel.fromJson(Map<String, dynamic> json) {
+    final cat = (json['category'] ?? 'order').toString().toLowerCase();
+    IconData icon = Icons.notifications_active_rounded;
+    Color iconColor = const Color(0xFF2563EB);
+    Color iconBgColor = const Color(0xFFEFF6FF);
+
+    if (cat == 'delivery') {
+      icon = Icons.delivery_dining_rounded;
+      iconColor = const Color(0xFF10B981);
+      iconBgColor = const Color(0xFFECFDF5);
+    } else if (cat == 'order') {
+      icon = Icons.storefront_rounded;
+      iconColor = const Color(0xFFD97706);
+      iconBgColor = const Color(0xFFFEF3C7);
+    } else if (cat == 'promo') {
+      icon = Icons.local_offer_rounded;
+      iconColor = const Color(0xFF8B5CF6);
+      iconBgColor = const Color(0xFFF3E8FF);
+    }
+
+    return AppNotificationModel(
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      title: json['title'] ?? 'Notification',
+      message: json['message'] ?? '',
+      time: json['createdAt'] != null
+          ? json['createdAt'].toString().substring(0, 10)
+          : 'Just now',
+      icon: icon,
+      iconColor: iconColor,
+      iconBgColor: iconBgColor,
+      category: cat,
+      isRead: json['isRead'] ?? false,
+    );
+  }
 }
 
 class SavedAddressModel {
@@ -128,6 +166,21 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     loadProfileData();
+    loadNotifications();
+  }
+
+  Future<void> loadNotifications() async {
+    try {
+      final response = await ApiClient.getData(ApiConstant.notifications);
+      if (response.statusCode == 200 && response.body != null && response.body['data'] is List) {
+        final List list = response.body['data'];
+        if (list.isNotEmpty) {
+          notifications.assignAll(list.map((n) => AppNotificationModel.fromJson(n)).toList());
+        }
+      }
+    } catch (e) {
+      debugPrint('Load notifications error: $e');
+    }
   }
 
   Future<void> loadProfileData() async {
@@ -161,6 +214,25 @@ class ProfileController extends GetxController {
     final savedImage = await SharePrefsHelper.getString('saved_user_image');
     if (savedImage.isNotEmpty) {
       profileImagePath.value = savedImage;
+    }
+
+    // Attempt to sync from backend if authenticated
+    try {
+      final res = await ApiClient.getData(ApiConstant.profile);
+      if (res.statusCode == 200 && res.body != null && res.body['data'] != null) {
+        final data = res.body['data'];
+        if (data['name'] != null && data['name'].toString().isNotEmpty) {
+          userName.value = data['name'];
+        }
+        if (data['phone'] != null && data['phone'].toString().isNotEmpty) {
+          userPhone.value = data['phone'];
+        }
+        if (data['address'] != null && data['address'].toString().isNotEmpty) {
+          userAddress.value = data['address'];
+        }
+      }
+    } catch (e) {
+      debugPrint('Profile sync error: $e');
     }
   }
 
@@ -198,8 +270,6 @@ class ProfileController extends GetxController {
   }) async {
     isLoading.value = true;
     try {
-      await Future.delayed(const Duration(milliseconds: 600));
-
       userName.value = name.trim();
       userPhone.value = phone.trim();
       userAddress.value = address.trim();
@@ -207,6 +277,22 @@ class ProfileController extends GetxController {
       await SharePrefsHelper.setString('saved_user_name', userName.value);
       await SharePrefsHelper.setString('saved_user_phone', userPhone.value);
       await SharePrefsHelper.setString('saved_user_address', userAddress.value);
+
+      // Hit Backend API to persist to MongoDB database
+      final payload = {
+        'name': userName.value,
+        'phone': userPhone.value,
+        'address': userAddress.value,
+      };
+
+      await ApiClient.patchData(
+        ApiConstant.updateProfile,
+        jsonEncode(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
 
       Fluttertoast.showToast(
         msg: 'Profile updated successfully!',
@@ -217,7 +303,7 @@ class ProfileController extends GetxController {
       Get.back();
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Failed to update profile: ',
+        msg: 'Failed to update profile: $e',
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
@@ -231,6 +317,7 @@ class ProfileController extends GetxController {
       n.isRead = true;
     }
     notifications.refresh();
+    ApiClient.patchData("${ApiConstant.notifications}/read-all", {});
     Fluttertoast.showToast(msg: 'All notifications marked as read');
   }
 

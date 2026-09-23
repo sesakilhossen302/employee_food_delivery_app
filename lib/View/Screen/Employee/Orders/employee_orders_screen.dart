@@ -52,15 +52,19 @@ class EmployeeOrdersScreen extends StatelessWidget {
             /// 2. Orders List
             Expanded(
               child: Obx(
-                () => ListView.separated(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-                  itemCount: controller.orders.length,
-                  separatorBuilder: (context, index) => SizedBox(height: 14.h),
-                  itemBuilder: (context, index) {
-                    final order = controller.orders[index];
-                    return _buildOrderCard(order);
-                  },
+                () => RefreshIndicator(
+                  color: AppColors.primaryAmber,
+                  onRefresh: controller.loadOrders,
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                    itemCount: controller.orders.length,
+                    separatorBuilder: (context, index) => SizedBox(height: 14.h),
+                    itemBuilder: (context, index) {
+                      final order = controller.orders[index];
+                      return _buildOrderCard(order);
+                    },
+                  ),
                 ),
               ),
             ),

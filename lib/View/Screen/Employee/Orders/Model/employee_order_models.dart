@@ -25,7 +25,7 @@ class OrderItemModel {
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
       name: json['name'] ?? '',
-      qty: json['qty'] ?? 1,
+      qty: (json['quantity'] as num?)?.toInt() ?? (json['qty'] as num?)?.toInt() ?? 1,
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       imageUrl: json['imageUrl'] ?? '',
     );
@@ -79,6 +79,80 @@ class OrderModel {
     required this.progressPercent,
     this.hasActiveBorder = false,
   });
+
+  factory OrderModel.fromJson(Map<String, dynamic> json) {
+    final rawStatus = (json['status'] ?? 'received').toString().toLowerCase();
+    OrderStatus mappedStatus;
+    String mappedText;
+    double progress;
+
+    switch (rawStatus) {
+      case 'confirmed':
+        mappedStatus = OrderStatus.confirmed;
+        mappedText = 'Confirmed';
+        progress = 0.32;
+        break;
+      case 'preparing':
+        mappedStatus = OrderStatus.preparing;
+        mappedText = 'Preparing';
+        progress = 0.50;
+        break;
+      case 'ready_for_driver':
+        mappedStatus = OrderStatus.readyForDriver;
+        mappedText = 'Ready for Driver';
+        progress = 0.65;
+        break;
+      case 'out_for_delivery':
+      case 'outfordelivery':
+        mappedStatus = OrderStatus.outForDelivery;
+        mappedText = 'Out for Delivery';
+        progress = 0.82;
+        break;
+      case 'delivered':
+        mappedStatus = OrderStatus.delivered;
+        mappedText = 'Delivered';
+        progress = 1.0;
+        break;
+      case 'received':
+      default:
+        mappedStatus = OrderStatus.orderReceived;
+        mappedText = 'Order Received';
+        progress = 0.16;
+        break;
+    }
+
+    final isDeliv = (json['fulfillmentType'] ?? 'delivery').toString().toLowerCase() == 'delivery';
+    final customer = json['customer'] as Map<String, dynamic>?;
+
+    final rawItems = json['items'] as List?;
+    final parsedItems = rawItems != null
+        ? rawItems.map((i) => OrderItemModel.fromJson(i as Map<String, dynamic>)).toList()
+        : <OrderItemModel>[];
+
+    return OrderModel(
+      id: json['orderNumber'] ?? json['_id']?.toString() ?? json['id']?.toString() ?? '',
+      date: json['createdAt'] != null
+          ? json['createdAt'].toString().substring(0, 10)
+          : 'Today',
+      status: mappedStatus,
+      statusText: mappedText,
+      isDelivery: isDeliv,
+      estimatedTime: isDeliv ? 'Est. 25–35 min' : 'Est. 10–15 min',
+      estimatedRange: '25–35 min',
+      deliveryAddress: customer?['address'] ?? (isDeliv ? 'Delivery Address' : 'Store Pickup'),
+      deliveryNote: customer?['instructions'] ?? 'Leave at door, ring bell',
+      items: parsedItems,
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['taxes'] as num?)?.toDouble() ?? (json['tax'] as num?)?.toDouble() ?? 0.0,
+      deliveryFee: (json['deliveryFee'] as num?)?.toDouble() ?? (isDeliv ? 3.99 : 0.0),
+      tip: (json['tip'] as num?)?.toDouble() ?? 0.0,
+      paymentMethod: json['paymentMethod'] == 'cash_at_store'
+          ? 'Cash At Pickup'
+          : 'Cash On Delivery',
+      progressPercent: progress,
+      hasActiveBorder: mappedStatus != OrderStatus.delivered,
+    );
+  }
 
   double get total => subtotal + tax + (isDelivery ? deliveryFee : 0.0) + tip;
 

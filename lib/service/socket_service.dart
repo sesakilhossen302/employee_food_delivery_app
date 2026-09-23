@@ -5,6 +5,8 @@ import 'package:socket_io_client/socket_io_client.dart';
 import 'api_url.dart' show ApiConstant;
 
 ///<------------------------- Socket Class ---------------->
+typedef SocketService = SocketApi;
+
 class SocketApi {
   // late IO.Socket socket;
   // Factory constructor to return the same static instance every time you create an object.

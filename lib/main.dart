@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
       builder: (context, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'QuickStop - Employee Food Delivery',
+          title: 'Little Arrows Delivery App',
           theme: ThemeData(
             scaffoldBackgroundColor: Colors.white,
             useMaterial3: true,

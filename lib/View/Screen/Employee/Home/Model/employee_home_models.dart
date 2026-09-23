@@ -15,9 +15,9 @@ class CategoryModel {
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
-      id: json['id']?.toString() ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name'] ?? '',
-      iconEmoji: json['iconEmoji'] ?? '',
+      iconEmoji: json['iconEmoji'] ?? '🛍️',
       iconUrl: json['iconUrl'],
       bgColorValue: json['bgColorValue'] ?? 0xFFEBF4FF,
     );
@@ -62,14 +62,18 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final priceVal = (json['price'] as num?)?.toDouble() ?? 0.0;
+    final saleVal = (json['salePrice'] as num?)?.toDouble() ?? (json['originalPrice'] as num?)?.toDouble();
     return ProductModel(
-      id: json['id']?.toString() ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       name: json['name'] ?? '',
-      unit: json['unit'] ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      originalPrice: (json['originalPrice'] as num?)?.toDouble(),
-      imageUrl: json['imageUrl'] ?? '',
-      isSale: json['isSale'] ?? false,
+      unit: json['unit'] ?? '1 pc',
+      price: priceVal,
+      originalPrice: saleVal,
+      imageUrl: json['imageUrl']?.toString().isNotEmpty == true
+          ? json['imageUrl']
+          : 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400',
+      isSale: json['isSale'] == true || (saleVal != null && saleVal > priceVal),
       category: json['category'] ?? 'Drinks',
       description: json['description'] ?? '',
       maxPerOrder: json['maxPerOrder'] ?? 12,

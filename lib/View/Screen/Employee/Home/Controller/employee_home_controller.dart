@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
+import '../../../../../service/api_client.dart';
+import '../../../../../service/api_url.dart';
 import '../Model/employee_home_models.dart';
 
 class EmployeeHomeController extends GetxController {
@@ -166,144 +168,131 @@ class EmployeeHomeController extends GetxController {
   Future<void> fetchHomeData() async {
     isLoading.value = true;
     try {
-      categories.assignAll([
-        CategoryModel(
-          id: '1',
-          name: 'Drinks',
-          iconEmoji: '🥤',
-          bgColorValue: 0xFFEFF6FF,
-        ),
-        CategoryModel(
-          id: '2',
-          name: 'Pop',
-          iconEmoji: '🫧',
-          bgColorValue: 0xFFFAF5FF,
-        ),
-        CategoryModel(
-          id: '3',
-          name: 'Energy Drinks',
-          iconEmoji: '⚡',
-          bgColorValue: 0xFFFFFBEB,
-        ),
-        CategoryModel(
-          id: '4',
-          name: 'Water',
-          iconEmoji: '💧',
-          bgColorValue: 0xFFF0FDFA,
-        ),
-        CategoryModel(
-          id: '5',
-          name: 'Coffee',
-          iconEmoji: '☕',
-          bgColorValue: 0xFFFFF7ED,
-        ),
-        CategoryModel(
-          id: '6',
-          name: 'Snacks',
-          iconEmoji: '🍿',
-          bgColorValue: 0xFFFDF2F8,
-        ),
-      ]);
-
-      allProducts.assignAll([
-        ProductModel(
-          id: 'p1',
-          name: 'Gatorade Cool Blue',
-          unit: '32 oz',
-          price: 3.49,
-          category: 'Drinks',
-          description: 'Sports drink, 32 oz · 32 oz',
-          imageUrl: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=400',
-          isSale: false,
-          maxPerOrder: 12,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p2',
-          name: 'Red Bull Original',
-          unit: '250ml',
-          price: 4.29,
-          category: 'Energy Drinks',
-          description: 'Vitalizes body and mind, 250ml can',
-          imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
-          isSale: false,
-          maxPerOrder: 12,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p3',
-          name: 'Coca-Cola 6-Pack',
-          unit: '6 × 355ml',
-          price: 5.99,
-          originalPrice: 7.99,
-          category: 'Pop',
-          description: 'Classic cola, 355ml cans (6 pack)',
-          imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400',
-          isSale: true,
-          maxPerOrder: 10,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p4',
-          name: 'Monster Energy Green',
-          unit: '473ml',
-          price: 3.99,
-          category: 'Energy Drinks',
-          description: 'Tear into a can of Monster Energy, 473ml',
-          imageUrl: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=400',
-          isSale: false,
-          maxPerOrder: 12,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p5',
-          name: 'Dasani Water 24-Pack',
-          unit: '24 × 500ml',
-          price: 7.99,
-          originalPrice: 9.99,
-          category: 'Water',
-          description: 'Purified water bottles, mineral enhanced',
-          imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400',
-          isSale: true,
-          maxPerOrder: 8,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p6',
-          name: 'Starbucks Frappuccino',
-          unit: '405ml',
-          price: 4.49,
-          category: 'Coffee',
-          description: 'Chilled coffee drink vanilla flavor',
-          imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400',
-          isSale: false,
-          maxPerOrder: 12,
-          inStock: true,
-        ),
-        ProductModel(
-          id: 'p7',
-          name: 'Doritos Nacho Cheese',
-          unit: '9.25 oz',
-          price: 3.99,
-          category: 'Snacks',
-          description: 'Crunchy tortilla chips with nacho cheese flavor',
-          imageUrl: 'https://images.unsplash.com/photo-1568644396922-5c3bfae12521?w=400',
-          isSale: false,
-          maxPerOrder: 15,
-          inStock: true,
-        ),
-      ]);
-
-      featuredProducts.assignAll(allProducts.take(4).toList());
-
-      
-      // Pre-seed cart items matching screenshot (Coca-Cola 6-Pack & Dasani Water)
-      if (productQuantities.isEmpty) {
-        productQuantities['p3'] = 1; // Coca-Cola 6-Pack ($5.99)
-        productQuantities['p5'] = 1; // Dasani Water 24-Pack ($7.99)
-        _recalculateCart();
+      // 1. Fetch live categories from backend API
+      final catRes = await ApiClient.getData(ApiConstant.categories);
+      if (catRes.statusCode == 200 && catRes.body != null && catRes.body['data'] is List) {
+        final List list = catRes.body['data'];
+        if (list.isNotEmpty) {
+          categories.assignAll(list.map((c) => CategoryModel.fromJson(c)).toList());
+        }
       }
 
+      // Default categories fallback if empty or offline
+      if (categories.isEmpty) {
+        categories.assignAll([
+          CategoryModel(id: '1', name: 'Drinks', iconEmoji: '🥤', bgColorValue: 0xFFEFF6FF),
+          CategoryModel(id: '2', name: 'Pop', iconEmoji: '🫧', bgColorValue: 0xFFFAF5FF),
+          CategoryModel(id: '3', name: 'Energy Drinks', iconEmoji: '⚡', bgColorValue: 0xFFFFFBEB),
+          CategoryModel(id: '4', name: 'Water', iconEmoji: '💧', bgColorValue: 0xFFF0FDFA),
+          CategoryModel(id: '5', name: 'Coffee', iconEmoji: '☕', bgColorValue: 0xFFFFF7ED),
+          CategoryModel(id: '6', name: 'Snacks', iconEmoji: '🍿', bgColorValue: 0xFFFDF2F8),
+        ]);
+      }
+
+      // 2. Fetch live products from backend MongoDB (includes Admin added products!)
+      final prodRes = await ApiClient.getData(ApiConstant.products);
+      if (prodRes.statusCode == 200 && prodRes.body != null && prodRes.body['data'] is List) {
+        final List list = prodRes.body['data'];
+        if (list.isNotEmpty) {
+          allProducts.assignAll(list.map((p) => ProductModel.fromJson(p)).toList());
+          featuredProducts.assignAll(allProducts.take(6).toList());
+        }
+      }
+
+      // Default products fallback if backend empty
+      if (allProducts.isEmpty) {
+        allProducts.assignAll([
+          ProductModel(
+            id: 'p1',
+            name: 'Gatorade Cool Blue',
+            unit: '32 oz',
+            price: 3.49,
+            category: 'Drinks',
+            description: 'Sports drink, 32 oz · 32 oz',
+            imageUrl: 'https://images.unsplash.com/photo-1527960471264-932f39eb5846?w=400',
+            isSale: false,
+            maxPerOrder: 12,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p2',
+            name: 'Red Bull Original',
+            unit: '250ml',
+            price: 4.29,
+            category: 'Energy Drinks',
+            description: 'Vitalizes body and mind, 250ml can',
+            imageUrl: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=400',
+            isSale: false,
+            maxPerOrder: 12,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p3',
+            name: 'Coca-Cola 6-Pack',
+            unit: '6 × 355ml',
+            price: 5.99,
+            originalPrice: 7.99,
+            category: 'Pop',
+            description: 'Classic cola, 355ml cans (6 pack)',
+            imageUrl: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400',
+            isSale: true,
+            maxPerOrder: 10,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p4',
+            name: 'Monster Energy Green',
+            unit: '473ml',
+            price: 3.99,
+            category: 'Energy Drinks',
+            description: 'Tear into a can of Monster Energy, 473ml',
+            imageUrl: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=400',
+            isSale: false,
+            maxPerOrder: 12,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p5',
+            name: 'Dasani Water 24-Pack',
+            unit: '24 × 500ml',
+            price: 7.99,
+            originalPrice: 9.99,
+            category: 'Water',
+            description: 'Purified water bottles, mineral enhanced',
+            imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=400',
+            isSale: true,
+            maxPerOrder: 8,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p6',
+            name: 'Starbucks Frappuccino',
+            unit: '405ml',
+            price: 4.49,
+            category: 'Coffee',
+            description: 'Chilled coffee drink vanilla flavor',
+            imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=400',
+            isSale: false,
+            maxPerOrder: 12,
+            inStock: true,
+          ),
+          ProductModel(
+            id: 'p7',
+            name: 'Doritos Nacho Cheese',
+            unit: '9.25 oz',
+            price: 3.99,
+            category: 'Snacks',
+            description: 'Crunchy tortilla chips with nacho cheese flavor',
+            imageUrl: 'https://images.unsplash.com/photo-1568644396922-5c3bfae12521?w=400',
+            isSale: false,
+            maxPerOrder: 15,
+            inStock: true,
+          ),
+        ]);
+        featuredProducts.assignAll(allProducts.take(4).toList());
+      }
+
+      // Deals
       todaysDeals.assignAll([
         DealModel(
           id: 'd1',
@@ -334,7 +323,7 @@ class EmployeeHomeController extends GetxController {
         ),
       ]);
     } catch (e) {
-      // Handle error
+      debugPrint('fetchHomeData error: $e');
     } finally {
       isLoading.value = false;
     }

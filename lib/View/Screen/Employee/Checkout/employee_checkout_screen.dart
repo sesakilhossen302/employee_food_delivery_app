@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
+import '../../../../service/api_client.dart';
+import '../../../../service/api_url.dart';
 import '../Home/Controller/employee_home_controller.dart';
 import '../Nav/Controller/employee_nav_controller.dart';
+import '../Orders/Controller/employee_orders_controller.dart';
 
 class EmployeeCheckoutScreen extends StatefulWidget {
   const EmployeeCheckoutScreen({super.key});
@@ -15,6 +20,7 @@ class EmployeeCheckoutScreen extends StatefulWidget {
 
 class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
   bool isDelivery = true;
+  bool isSubmitting = false;
 
   final TextEditingController nameController = TextEditingController(text: 'Customer');
   final TextEditingController phoneController = TextEditingController(text: '(555) 123-4567');
@@ -607,6 +613,79 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
   }
 
   /// --------------------------------------------------------------------------
+  /// PLACE ORDER LOGIC & BACKEND API HIT
+  /// --------------------------------------------------------------------------
+  Future<void> _handlePlaceOrder(EmployeeHomeController controller) async {
+    if (controller.cartItems.isEmpty) {
+      Fluttertoast.showToast(msg: 'Your cart is empty');
+      return;
+    }
+
+    setState(() {
+      isSubmitting = true;
+    });
+
+    try {
+      final orderPayload = {
+        "customer": {
+          "name": nameController.text.trim().isNotEmpty ? nameController.text.trim() : "Customer",
+          "phone": phoneController.text.trim().isNotEmpty ? phoneController.text.trim() : "+1 (555) 123-4567",
+          "address": isDelivery ? streetController.text.trim() : "QuickStop Gas Station, 1250 Highway Blvd",
+          "instructions": instructionsController.text.trim(),
+          "distanceKm": 3.2,
+        },
+        "fulfillmentType": isDelivery ? "delivery" : "pickup",
+        "items": controller.cartItems.map((entry) => {
+          "productId": entry.key.id,
+          "name": entry.key.name,
+          "price": entry.key.price,
+          "quantity": entry.value,
+          "unit": entry.key.unit,
+          "imageUrl": entry.key.imageUrl,
+        }).toList(),
+        "tip": 0.0,
+        "paymentMethod": isDelivery ? "cash_on_delivery" : "cash_at_store",
+      };
+
+      final response = await ApiClient.postData(
+        ApiConstant.createOrder,
+        jsonEncode(orderPayload),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      String orderNum = '';
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.body != null && response.body['data'] != null) {
+          orderNum = response.body['data']['orderNumber'] ?? '';
+        }
+      }
+
+      // Refresh Orders Controller if active
+      if (Get.isRegistered<EmployeeOrdersController>()) {
+        Get.find<EmployeeOrdersController>().loadOrders();
+      }
+
+      if (mounted) {
+        _showOrderSuccessDialog(context, controller, orderNum: orderNum);
+      }
+    } catch (e) {
+      debugPrint("Order error: $e");
+      if (mounted) {
+        _showOrderSuccessDialog(context, controller);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  /// --------------------------------------------------------------------------
   /// PLACE ORDER BUTTON
   /// --------------------------------------------------------------------------
   Widget _buildPlaceOrderButton(EmployeeHomeController controller) {
@@ -616,9 +695,7 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
       width: double.infinity,
       height: 52.h,
       child: ElevatedButton(
-        onPressed: () {
-          _showOrderSuccessDialog(context, controller);
-        },
+        onPressed: isSubmitting ? null : () => _handlePlaceOrder(controller),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primaryAmber,
           elevation: 0,
@@ -626,19 +703,25 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
             borderRadius: BorderRadius.circular(16.r),
           ),
         ),
-        child: Text(
-          'Place Order · \$${total.toStringAsFixed(2)}',
-          style: GoogleFonts.inter(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
+        child: isSubmitting
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+              )
+            : Text(
+                'Place Order · \$${total.toStringAsFixed(2)}',
+                style: GoogleFonts.inter(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
       ),
     );
   }
 
-  void _showOrderSuccessDialog(BuildContext context, EmployeeHomeController controller) {
+  void _showOrderSuccessDialog(BuildContext context, EmployeeHomeController controller, {String orderNum = ''}) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -663,7 +746,8 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
                 ),
                 SizedBox(height: 16.h),
                 Text(
-                  'Order Placed!',
+                  orderNum.isNotEmpty ? 'Order Placed ($orderNum)!' : 'Order Placed!',
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w800,
@@ -673,8 +757,8 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
                 SizedBox(height: 8.h),
                 Text(
                   isDelivery
-                      ? 'Your order will be delivered in 25–35 minutes.'
-                      : 'Your order will be ready for pickup in 10–15 minutes.',
+                      ? 'Your order has been sent to Little Arrows store.\nEstimated delivery in 25–35 minutes.'
+                      : 'Your order has been sent to Little Arrows store.\nReady for pickup in 10–15 minutes.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 13.sp,

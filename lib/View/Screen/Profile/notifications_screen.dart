@@ -95,11 +95,13 @@ class NotificationsScreen extends StatelessWidget {
           );
         }
 
-        return ListView.separated(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-          itemCount: controller.notifications.length,
-          separatorBuilder: (ctx, i) => SizedBox(height: 10.h),
+        return RefreshIndicator(
+          onRefresh: controller.loadNotifications,
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            itemCount: controller.notifications.length,
+            separatorBuilder: (ctx, i) => SizedBox(height: 10.h),
           itemBuilder: (ctx, index) {
             final item = controller.notifications[index];
             return Material(
@@ -190,8 +192,9 @@ class NotificationsScreen extends StatelessWidget {
               ),
             );
           },
-        );
-      }),
-    );
+        ),
+      );
+    }),
+  );
   }
 }
