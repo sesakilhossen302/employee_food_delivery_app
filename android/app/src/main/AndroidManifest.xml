@@ -6,7 +6,8 @@
     <application
         android:label="Little Arrows Delivery App"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:usesCleartextTraffic="true">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDJXC1_hT7bYHo1qQU56OOAQTjz4FPq0Ks" />

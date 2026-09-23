@@ -27,26 +27,28 @@ class SignInScreen extends StatelessWidget {
                 children: [
                   SizedBox(height: 20.h),
 
-                  /// Brand Gas Station Icon
+                  /// Brand App Logo
                   Container(
-                    width: 64.w,
-                    height: 64.h,
+                    width: 76.w,
+                    height: 76.w,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius: BorderRadius.circular(18.r),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryColor.withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
+                          color: AppColors.primaryColor.withValues(alpha: 0.18),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: Center(
-                      child: Icon(
-                        Icons.local_gas_station_rounded,
-                        color: Colors.white,
-                        size: 34,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20.r),
+                      child: Image.asset(
+                        'assets/images/image.png',
+                        width: 76.w,
+                        height: 76.w,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
@@ -54,9 +56,9 @@ class SignInScreen extends StatelessWidget {
 
                   /// App Title
                   Text(
-                    'QuickStop',
+                    'Little Arrows',
                     style: GoogleFonts.poppins(
-                      fontSize: 26,
+                      fontSize: 26.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
                       letterSpacing: -0.2,
@@ -66,10 +68,10 @@ class SignInScreen extends StatelessWidget {
 
                   /// Subtitle
                   Text(
-                    'Gas Station Delivery',
+                    'Delivery App',
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w500,
                       color: const Color(0xFF6B7280),
                     ),
                   ),

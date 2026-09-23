@@ -1,9 +1,20 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiConstant {
   static const port = "/api/v1";
   
-  // Use 10.0.2.2 for Android Emulator, localhost for Windows/Web, or your machine IP for physical phone
-  static const baseUrl = "http://10.0.2.2:5000";
-  static const socketUrl = "http://10.0.2.2:5000";
+  // Reads from .env (API_BASE_URL) or defaults to local machine IP for physical device connection
+  static String get baseUrl {
+    final envUrl = dotenv.env['API_BASE_URL'];
+    if (envUrl != null && envUrl.trim().isNotEmpty) return envUrl.trim();
+    return "http://10.10.26.202:5000";
+  }
+
+  static String get socketUrl {
+    final envSocket = dotenv.env['API_SOCKET_URL'] ?? dotenv.env['API_BASE_URL'];
+    if (envSocket != null && envSocket.trim().isNotEmpty) return envSocket.trim();
+    return "http://10.10.26.202:5000";
+  }
 
   ///<=================================== Auth & Gmail OTP ====================>
   static const signIn = "$port/auth/login";
