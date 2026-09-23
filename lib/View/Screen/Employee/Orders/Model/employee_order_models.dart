@@ -22,12 +22,47 @@ class OrderItemModel {
     required this.imageUrl,
   });
 
+  static String fallbackImageFor(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('monster') || lower.contains('energy') || lower.contains('red bull')) {
+      return 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=400';
+    }
+    if (lower.contains('coca') || lower.contains('coke') || lower.contains('pepsi') || lower.contains('drink') || lower.contains('pop') || lower.contains('beverage')) {
+      return 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?w=400';
+    }
+    if (lower.contains('doritos') || lower.contains('chip') || lower.contains('snack') || lower.contains('nacho') || lower.contains('lays')) {
+      return 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=400';
+    }
+    if (lower.contains('candy') || lower.contains('chocolate') || lower.contains('snickers') || lower.contains('bar')) {
+      return 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?w=400';
+    }
+    if (lower.contains('ice cream')) {
+      return 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=400';
+    }
+    if (lower.contains('firewood') || lower.contains('wood')) {
+      return 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400';
+    }
+    if (lower.contains('fluid') || lower.contains('washer') || lower.contains('auto')) {
+      return 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400';
+    }
+    if (lower.contains('ice')) {
+      return 'https://images.unsplash.com/photo-1516054575922-f0b8eeadec1a?w=400';
+    }
+    return 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400';
+  }
+
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    final rawImg = json['imageUrl']?.toString() ?? '';
+    final itemName = json['name']?.toString() ?? '';
+    final validImg = (rawImg.isNotEmpty && rawImg.startsWith('http'))
+        ? rawImg
+        : fallbackImageFor(itemName);
+
     return OrderItemModel(
-      name: json['name'] ?? '',
+      name: itemName,
       qty: (json['quantity'] as num?)?.toInt() ?? (json['qty'] as num?)?.toInt() ?? 1,
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: validImg,
     );
   }
 

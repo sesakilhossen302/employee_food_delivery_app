@@ -228,22 +228,32 @@ class EmployeeOrdersScreen extends StatelessWidget {
             /// Product Thumbnails Row
             Row(
               children: order.items.take(3).map((item) {
+                final displayImg = item.imageUrl.isNotEmpty
+                    ? item.imageUrl
+                    : OrderItemModel.fallbackImageFor(item.name);
                 return Container(
                   margin: EdgeInsets.only(right: 8.w),
-                  width: 44.w,
-                  height: 44.w,
+                  width: 48.w,
+                  height: 48.w,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: const Color(0xFFE5E7EB), width: 0.8),
+                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(10.r),
                     child: Image.network(
-                      item.imageUrl,
+                      displayImg,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: const Color(0xFFF3F4F6),
-                          child: const Icon(
-                            Icons.fastfood_outlined,
-                            size: 20,
-                            color: Color(0xFF9CA3AF),
+                        return Image.network(
+                          OrderItemModel.fallbackImageFor(item.name),
+                          fit: BoxFit.cover,
+                          errorBuilder: (c, e, s) => Container(
+                            color: const Color(0xFFFEF3C7),
+                            child: const Center(
+                              child: Icon(Icons.fastfood_rounded, size: 20, color: AppColors.primaryAmber),
+                            ),
                           ),
                         );
                       },
