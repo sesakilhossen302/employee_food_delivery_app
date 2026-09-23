@@ -12,7 +12,9 @@ class AppConstants {
   static String rememberMe = "rememberMe";
   static var chatId = "chatID";
 
-
+  /// Google Maps API Key
+  static const String googleMapsApiKey =
+      "AIzaSyDJXC1_hT7bYHo1qQU56OOAQTjz4FPq0Ks";
 }
 
 enum Status { loading, error, completed, internetError }

@@ -31,6 +31,7 @@ class ApiConstant {
   ///<=================================== Orders ====================>
   static const createOrder = "$port/orders";
   static const orders = "$port/orders";
+  static String orderTracking(String id) => "$port/orders/$id/tracking";
 
   ///<=================================== Driver Flow ====================>
   static const driverActiveOrders = "$port/driver/active-orders";

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 import '../Model/employee_order_models.dart';
+import '../Tracking/live_order_tracking_screen.dart';
 
 class EmployeeOrderDetailScreen extends StatelessWidget {
   final OrderModel order;
@@ -167,108 +168,179 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
   /// MINI MAP WIDGET (Image 2)
   /// --------------------------------------------------------------------------
   Widget _buildMiniMapWidget() {
-    return Container(
-      width: double.infinity,
-      height: 180.h,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: const Color(0xFFDCFCE7)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20.r),
-        child: Stack(
-          children: [
-            /// Grid Roads Pattern
-            CustomPaint(
-              size: Size(double.infinity, 180.h),
-              painter: _MapRoadsPainter(),
-            ),
-
-            /// Store Pin (QuickStop)
-            Positioned(
-              bottom: 16.h,
-              left: 16.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: const BoxDecoration(
-                        color: Colors.black,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: 6.w),
-                    Text(
-                      'QuickStop',
-                      style: GoogleFonts.inter(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            /// Route Line and Pins
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _RoutePainter(),
-              ),
-            ),
-
-            /// "On the way" floating pill
-            Positioned(
-              top: 14.h,
-              right: 16.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryAmber,
-                  borderRadius: BorderRadius.circular(16.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryAmber.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.local_shipping_rounded, size: 14, color: Colors.white),
-                    SizedBox(width: 4.w),
-                    Text(
-                      'On the way',
-                      style: GoogleFonts.inter(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return GestureDetector(
+      onTap: () => Get.to(() => LiveOrderTrackingScreen(order: order)),
+      child: Container(
+        width: double.infinity,
+        height: 200.h,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0FDF4),
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20.r),
+          child: Stack(
+            children: [
+              /// Grid Roads Pattern
+              CustomPaint(
+                size: Size(double.infinity, 200.h),
+                painter: _MapRoadsPainter(),
+              ),
+
+              /// Store Pin (QuickStop)
+              Positioned(
+                bottom: 50.h,
+                left: 16.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8.w,
+                        height: 8.w,
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Store',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              /// Route Line and Pins
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _RoutePainter(),
+                ),
+              ),
+
+              /// "On the way" floating pill
+              Positioned(
+                top: 14.h,
+                right: 16.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryAmber,
+                    borderRadius: BorderRadius.circular(16.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryAmber.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_shipping_rounded, size: 14, color: Colors.white),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'On the way',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              /// Bottom "Track Live on Google Map" Bar
+              Positioned(
+                left: 12.w,
+                right: 12.w,
+                bottom: 10.h,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF111827),
+                    borderRadius: BorderRadius.circular(14.r),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 8.w,
+                            height: 8.w,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          SizedBox(width: 8.w),
+                          Text(
+                            'Live Driver GPS (5s Sync)',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(
+                            'Open Map',
+                            style: GoogleFonts.inter(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryAmber,
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.primaryAmber),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

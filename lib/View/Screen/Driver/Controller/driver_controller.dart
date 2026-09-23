@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import '../../../../service/api_client.dart';
 import '../../../../service/api_url.dart';
+import '../../../../service/route_service.dart';
 import '../../../../service/socket_service.dart';
 import '../Model/driver_order_model.dart';
 
@@ -20,6 +23,17 @@ class DriverController extends GetxController {
   final RxDouble todayEarnings = 0.0.obs;
   final RxDouble cashCollectedInHand = 0.0.obs;
   final RxInt completedCount = 0.obs;
+
+  /// Live Driver Coordinates & Movement
+  final RxDouble driverLat = 46.8820.obs;
+  final RxDouble driverLng = (-96.7940).obs;
+  final RxDouble driverHeading = 45.0.obs;
+  final RxList<LatLng> roadPolylinePoints = <LatLng>[].obs;
+
+  RxDouble get currentLatitude => driverLat;
+  RxDouble get currentLongitude => driverLng;
+
+  Timer? _locationTimer;
 
   @override
   void onInit() {
@@ -136,6 +150,7 @@ class DriverController extends GetxController {
         jsonEncode({'status': 'out_for_delivery'}),
       );
     }
+    _startLocationBroadcasting();
   }
 
   void markArrived() {
@@ -175,6 +190,69 @@ class DriverController extends GetxController {
         jsonEncode({'status': 'delivered', 'paymentStatus': 'paid'}),
       );
     }
+    _stopLocationBroadcasting();
     fetchDriverData();
+  }
+
+  void _startLocationBroadcasting() async {
+    _stopLocationBroadcasting();
+
+    // Default QuickStop Gas Station origin
+    const origin = LatLng(46.8772, -96.7898);
+    // Customer destination
+    const destination = LatLng(46.8920, -96.8050);
+
+    // Compute real road routing
+    final route = await RouteService.getRoadRoute(origin: origin, destination: destination);
+    roadPolylinePoints.assignAll(route);
+
+    int routeIndex = 0;
+    if (route.isNotEmpty) {
+      driverLat.value = route.first.latitude;
+      driverLng.value = route.first.longitude;
+    }
+
+    _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (activeOrder.value == null) {
+        timer.cancel();
+        return;
+      }
+
+      // Step along the road route towards destination
+      if (route.isNotEmpty && routeIndex < route.length - 1) {
+        routeIndex++;
+        final nextPoint = route[routeIndex];
+        driverLat.value = nextPoint.latitude;
+        driverLng.value = nextPoint.longitude;
+      }
+
+      // Emit live driver location over Socket.io every 5 seconds
+      try {
+        final payload = {
+          'driverId': 'driver_marcus',
+          'orderId': activeOrder.value?.backendId ?? activeOrder.value?.id,
+          'lat': driverLat.value,
+          'lng': driverLng.value,
+          'heading': driverHeading.value,
+          'speed': 32.5,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        SocketService.socket.emit('driver_location', payload);
+        debugPrint('[Driver Location] Emitted 5-sec GPS update: $payload');
+      } catch (e) {
+        debugPrint('Driver location emit error: $e');
+      }
+    });
+  }
+
+  void _stopLocationBroadcasting() {
+    _locationTimer?.cancel();
+    _locationTimer = null;
+  }
+
+  @override
+  void onClose() {
+    _stopLocationBroadcasting();
+    super.onClose();
   }
 }
