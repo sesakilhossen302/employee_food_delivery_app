@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapMarkerHelper {
-  /// Generates a customized bitmap marker with an icon, pill background, and text label (e.g. "Driver", "Customer")
+  /// Generates a sleek, modern compact bitmap marker with icon and label (e.g. "Driver", "Customer", "Store")
   static Future<BitmapDescriptor> createLabeledMarker({
     required String label,
     required IconData icon,
@@ -14,72 +14,74 @@ class MapMarkerHelper {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
-    const double width = 280.0;
-    const double height = 110.0;
-    const double pillHeight = 70.0;
-    const double radius = 24.0;
+    // Sleek compact dimensions matching standard Foodpanda / Uber map chips
+    const double width = 136.0;
+    const double height = 54.0;
+    const double pillHeight = 36.0;
+    const double radius = 14.0;
+    const double tailHeight = 10.0;
+    const double tailHalfWidth = 7.0;
 
-    // Outer shadow
+    // 1. Drop Shadow
     final Path shadowPath = Path()
       ..addRRect(
         RRect.fromRectAndRadius(
-          const Rect.fromLTWH(8, 6, width - 16, pillHeight),
+          const Rect.fromLTWH(4, 3, width - 8, pillHeight),
           const Radius.circular(radius),
         ),
       );
-    canvas.drawShadow(shadowPath, Colors.black, 8.0, true);
+    canvas.drawShadow(shadowPath, Colors.black, 4.0, true);
 
-    // Pill background
+    // 2. Pill Background
     final Paint bgPaint = Paint()
       ..color = primaryColor
       ..style = PaintingStyle.fill;
     final RRect pillRRect = RRect.fromRectAndRadius(
-      const Rect.fromLTWH(8, 4, width - 16, pillHeight),
+      const Rect.fromLTWH(4, 2, width - 8, pillHeight),
       const Radius.circular(radius),
     );
     canvas.drawRRect(pillRRect, bgPaint);
 
-    // Pill Border
+    // 3. Crisp White Border
     final Paint borderPaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 3.5
+      ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
     canvas.drawRRect(pillRRect, borderPaint);
 
-    // Pin tail (pointing downward)
+    // 4. Pin Tail (Downward pointer)
     final Path pointerPath = Path();
-    pointerPath.moveTo((width / 2) - 18, 4 + pillHeight);
-    pointerPath.lineTo(width / 2, 4 + pillHeight + 20);
-    pointerPath.lineTo((width / 2) + 18, 4 + pillHeight);
+    pointerPath.moveTo((width / 2) - tailHalfWidth, 2 + pillHeight);
+    pointerPath.lineTo(width / 2, 2 + pillHeight + tailHeight);
+    pointerPath.lineTo((width / 2) + tailHalfWidth, 2 + pillHeight);
     pointerPath.close();
     canvas.drawPath(pointerPath, bgPaint);
 
-    // Tail border
     final Path pointerBorder = Path();
-    pointerBorder.moveTo((width / 2) - 18, 4 + pillHeight);
-    pointerBorder.lineTo(width / 2, 4 + pillHeight + 20);
-    pointerBorder.lineTo((width / 2) + 18, 4 + pillHeight);
+    pointerBorder.moveTo((width / 2) - tailHalfWidth, 2 + pillHeight);
+    pointerBorder.lineTo(width / 2, 2 + pillHeight + tailHeight);
+    pointerBorder.lineTo((width / 2) + tailHalfWidth, 2 + pillHeight);
     canvas.drawPath(pointerBorder, borderPaint);
 
-    // Circular icon badge on the left
-    const double iconBadgeSize = 46.0;
+    // 5. Left Circular Icon Badge
+    const double iconBadgeSize = 24.0;
     final Paint iconBadgePaint = Paint()
       ..color = badgeColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(
-      const Offset(8 + 12 + iconBadgeSize / 2, 4 + pillHeight / 2),
+      const Offset(4 + 6 + iconBadgeSize / 2, 2 + pillHeight / 2),
       iconBadgeSize / 2,
       iconBadgePaint,
     );
 
-    // Draw Icon inside the circle
+    // 6. Draw Icon
     final TextPainter iconPainter = TextPainter(
       textDirection: TextDirection.ltr,
     );
     iconPainter.text = TextSpan(
       text: String.fromCharCode(icon.codePoint),
       style: TextStyle(
-        fontSize: 26.0,
+        fontSize: 14.0,
         fontFamily: icon.fontFamily,
         package: icon.fontPackage,
         color: primaryColor,
@@ -89,12 +91,12 @@ class MapMarkerHelper {
     iconPainter.paint(
       canvas,
       Offset(
-        8 + 12 + (iconBadgeSize - iconPainter.width) / 2,
-        4 + (pillHeight - iconPainter.height) / 2,
+        4 + 6 + (iconBadgeSize - iconPainter.width) / 2,
+        2 + (pillHeight - iconPainter.height) / 2,
       ),
     );
 
-    // Draw Label Text
+    // 7. Draw Label Text
     final TextPainter textPainter = TextPainter(
       textDirection: TextDirection.ltr,
       maxLines: 1,
@@ -102,18 +104,18 @@ class MapMarkerHelper {
     textPainter.text = TextSpan(
       text: label,
       style: TextStyle(
-        fontSize: 24.0,
-        fontWeight: FontWeight.w900,
+        fontSize: 12.0,
+        fontWeight: FontWeight.w800,
         color: textColor,
-        letterSpacing: 0.5,
+        letterSpacing: 0.3,
       ),
     );
-    textPainter.layout(maxWidth: width - 85);
+    textPainter.layout(maxWidth: width - 42);
     textPainter.paint(
       canvas,
       Offset(
-        8 + 12 + iconBadgeSize + 14,
-        4 + (pillHeight - textPainter.height) / 2,
+        4 + 6 + iconBadgeSize + 6,
+        2 + (pillHeight - textPainter.height) / 2,
       ),
     );
 

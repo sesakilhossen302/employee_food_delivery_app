@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:get/get.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 import '../Model/employee_order_models.dart';
@@ -168,18 +169,49 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
   /// MINI MAP WIDGET (Image 2)
   /// --------------------------------------------------------------------------
   Widget _buildMiniMapWidget() {
+    const storeLoc = LatLng(46.8772, -96.7898);
+    const driverLoc = LatLng(46.8845, -96.7960);
+    const custLoc = LatLng(46.8920, -96.8050);
+
+    final miniMarkers = <Marker>{
+      Marker(
+        markerId: const MarkerId('mini_store'),
+        position: storeLoc,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      ),
+      Marker(
+        markerId: const MarkerId('mini_driver'),
+        position: driverLoc,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+      ),
+      Marker(
+        markerId: const MarkerId('mini_cust'),
+        position: custLoc,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+      ),
+    };
+
+    final miniPolylines = <Polyline>{
+      const Polyline(
+        polylineId: PolylineId('mini_route'),
+        points: [storeLoc, driverLoc, custLoc],
+        color: AppColors.primaryAmber,
+        width: 4,
+      ),
+    };
+
     return GestureDetector(
       onTap: () => Get.to(() => LiveOrderTrackingScreen(order: order)),
       child: Container(
         width: double.infinity,
         height: 200.h,
         decoration: BoxDecoration(
-          color: const Color(0xFFF0FDF4),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20.r),
-          border: Border.all(color: const Color(0xFFDCFCE7), width: 1.5),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -189,58 +221,22 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
           child: Stack(
             children: [
-              /// Grid Roads Pattern
-              CustomPaint(
-                size: Size(double.infinity, 200.h),
-                painter: _MapRoadsPainter(),
-              ),
-
-              /// Store Pin (QuickStop)
-              Positioned(
-                bottom: 50.h,
-                left: 16.w,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8.w,
-                        height: 8.w,
-                        decoration: const BoxDecoration(
-                          color: Colors.black,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      SizedBox(width: 6.w),
-                      Text(
-                        'Store',
-                        style: GoogleFonts.inter(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111827),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              /// Route Line and Pins
+              /// Real Google Map preview
               Positioned.fill(
-                child: CustomPaint(
-                  painter: _RoutePainter(),
+                child: AbsorbPointer(
+                  absorbing: true,
+                  child: GoogleMap(
+                    initialCameraPosition: const CameraPosition(
+                      target: LatLng(46.8845, -96.7960),
+                      zoom: 13.0,
+                    ),
+                    markers: miniMarkers,
+                    polylines: miniPolylines,
+                    zoomControlsEnabled: false,
+                    myLocationButtonEnabled: false,
+                    compassEnabled: false,
+                    mapToolbarEnabled: false,
+                  ),
                 ),
               ),
 
@@ -291,7 +287,7 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14.r),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -845,69 +841,3 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
   }
 }
 
-/// Custom Painters for Stylized Map
-class _MapRoadsPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final blockPaint = Paint()
-      ..color = const Color(0xFFE2F4E8)
-      ..style = PaintingStyle.fill;
-
-    // Draw grid blocks
-    final blockW = size.width / 4;
-    final blockH = size.height / 3;
-
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 3; j++) {
-        final rect = Rect.fromLTWH(
-          i * blockW + 6,
-          j * blockH + 6,
-          blockW - 12,
-          blockH - 12,
-        );
-        canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), blockPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _RoutePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final dashedPaint = Paint()
-      ..color = const Color(0xFFF59E0B)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-
-    final path = Path();
-    path.moveTo(size.width * 0.28, size.height * 0.55);
-    path.lineTo(size.width * 0.45, size.height * 0.55);
-    path.lineTo(size.width * 0.45, size.height * 0.26);
-    path.lineTo(size.width * 0.70, size.height * 0.26);
-    path.lineTo(size.width * 0.70, size.height * 0.55);
-    path.lineTo(size.width * 0.85, size.height * 0.55);
-
-    // Draw dashed path
-    canvas.drawPath(path, dashedPaint);
-
-    // Store starting dot
-    final startPaint = Paint()..color = const Color(0xFF111827);
-    canvas.drawCircle(Offset(size.width * 0.28, size.height * 0.55), 7, startPaint);
-
-    // Destination target circle
-    final destRingPaint = Paint()
-      ..color = const Color(0xFFF59E0B)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    final destCenterPaint = Paint()..color = const Color(0xFFF59E0B);
-
-    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 8, destRingPaint);
-    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.55), 4, destCenterPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

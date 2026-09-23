@@ -189,6 +189,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     final driverMarker = Marker(
       markerId: const MarkerId('driver_marker'),
       position: _driverLoc,
+      anchor: const Offset(0.5, 0.89),
       icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
       infoWindow: InfoWindow(
         title: _driverName.isNotEmpty ? 'Driver: $_driverName' : 'Driver',
@@ -201,6 +202,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     final customerMarker = Marker(
       markerId: const MarkerId('customer_marker'),
       position: _customerLoc,
+      anchor: const Offset(0.5, 0.89),
       icon: _customerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       infoWindow: InfoWindow(
         title: 'Customer Destination',
@@ -213,9 +215,10 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     final storeMarker = Marker(
       markerId: const MarkerId('store_marker'),
       position: _storeLoc,
+      anchor: const Offset(0.5, 0.89),
       icon: _storeIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       infoWindow: const InfoWindow(
-        title: 'Store (QuickStop / Little Arrows)',
+        title: 'Store (Little Arrows)',
         snippet: 'Origin Pickup Location',
       ),
       zIndexInt: 1,
@@ -319,17 +322,20 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   void _fitMapBounds() {
     if (_mapController == null) return;
 
-    final double minLat = [_driverLoc.latitude, _customerLoc.latitude].reduce((a, b) => a < b ? a : b);
-    final double maxLat = [_driverLoc.latitude, _customerLoc.latitude].reduce((a, b) => a > b ? a : b);
-    final double minLng = [_driverLoc.longitude, _customerLoc.longitude].reduce((a, b) => a < b ? a : b);
-    final double maxLng = [_driverLoc.longitude, _customerLoc.longitude].reduce((a, b) => a > b ? a : b);
+    final lats = [_driverLoc.latitude, _customerLoc.latitude, _storeLoc.latitude];
+    final lngs = [_driverLoc.longitude, _customerLoc.longitude, _storeLoc.longitude];
+
+    final double minLat = lats.reduce((a, b) => a < b ? a : b);
+    final double maxLat = lats.reduce((a, b) => a > b ? a : b);
+    final double minLng = lngs.reduce((a, b) => a < b ? a : b);
+    final double maxLng = lngs.reduce((a, b) => a > b ? a : b);
 
     final bounds = LatLngBounds(
-      southwest: LatLng(minLat - 0.003, minLng - 0.003),
-      northeast: LatLng(maxLat + 0.003, maxLng + 0.003),
+      southwest: LatLng(minLat - 0.005, minLng - 0.005),
+      northeast: LatLng(maxLat + 0.005, maxLng + 0.005),
     );
 
-    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 70));
   }
 
   @override
@@ -341,7 +347,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           /// 1. Interactive Google Map with Road Routing
           Positioned.fill(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: AppColors.primaryAmber))
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryAmber))
                 : GoogleMap(
                     initialCameraPosition: CameraPosition(
                       target: LatLng(
@@ -418,7 +424,9 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  'Order #${widget.order.id}',
+                                  widget.order.id.startsWith('#')
+                                      ? 'Order ${widget.order.id}'
+                                      : 'Order #${widget.order.id}',
                                   style: GoogleFonts.inter(
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w800,

@@ -13,11 +13,33 @@ class CategoryModel {
     required this.bgColorValue,
   });
 
+  static String sanitizeEmoji(String name, String? raw) {
+    if (raw != null && raw.trim().isNotEmpty) {
+      final s = raw.trim();
+      if (!s.contains('ð') && !s.contains('â') && !s.contains('ï') && !s.contains('') && s.length <= 4) {
+        return s;
+      }
+    }
+    final lower = name.toLowerCase();
+    if (lower.contains('drink') || lower.contains('pop') || lower.contains('beverage')) return '🥤';
+    if (lower.contains('energy')) return '⚡';
+    if (lower.contains('snack') || lower.contains('chip')) return '🍿';
+    if (lower.contains('candy') || lower.contains('chocolate')) return '🍫';
+    if (lower.contains('ice cream')) return '🍦';
+    if (lower.contains('auto') || lower.contains('fluid')) return '🚗';
+    if (lower.contains('cooler') || lower.contains('ice')) return '🧊';
+    if (lower.contains('firewood') || lower.contains('camp')) return '🪵';
+    if (lower.contains('grocery') || lower.contains('essential')) return '🛒';
+    if (lower.contains('special') || lower.contains('season')) return '🔥';
+    return '🛍️';
+  }
+
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    final catName = json['name']?.toString() ?? '';
     return CategoryModel(
       id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
-      name: json['name'] ?? '',
-      iconEmoji: json['iconEmoji'] ?? '🛍️',
+      name: catName,
+      iconEmoji: sanitizeEmoji(catName, json['iconEmoji']?.toString()),
       iconUrl: json['iconUrl'],
       bgColorValue: json['bgColorValue'] ?? 0xFFEBF4FF,
     );
