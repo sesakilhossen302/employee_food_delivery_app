@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
   static String bearerToken = "BearerToken";
   // static String userId = "UserId";
@@ -12,9 +14,10 @@ class AppConstants {
   static String rememberMe = "rememberMe";
   static var chatId = "chatID";
 
-  /// Google Maps API Key
-  static const String googleMapsApiKey =
-      "AIzaSyDJXC1_hT7bYHo1qQU56OOAQTjz4FPq0Ks";
+  /// Google Maps API Key loaded securely from .env (Not public / not hardcoded)
+  static String get googleMapsApiKey =>
+      dotenv.env['GOOGLE_MAPS_API_KEY'] ??
+      const String.fromEnvironment('GOOGLE_MAPS_API_KEY', defaultValue: '');
 }
 
 enum Status { loading, error, completed, internetError }

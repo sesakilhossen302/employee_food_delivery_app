@@ -25,15 +25,15 @@ class LiveOrderTrackingScreen extends StatefulWidget {
 class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   GoogleMapController? _mapController;
 
-  // Locations (Default fallback around city center)
-  LatLng _driverLoc = const LatLng(48.1505, -103.6240);
-  LatLng _customerLoc = const LatLng(48.1565, -103.6185);
-  LatLng _storeLoc = const LatLng(48.1472, -103.6268);
+  // Dynamic Locations initialized from backend
+  LatLng _driverLoc = const LatLng(46.8820, -96.7940);
+  LatLng _customerLoc = const LatLng(46.8920, -96.8050);
+  LatLng _storeLoc = const LatLng(46.8772, -96.7898);
 
-  String _driverName = 'Alex Brooks';
-  String _driverPhone = '+1 (555) 234-5678';
-  String _driverVehicle = 'Silver Honda Civic • ND 842-XYZ';
-  double _driverRating = 4.9;
+  String _driverName = '';
+  String _driverPhone = '';
+  String _driverVehicle = '';
+  double _driverRating = 0.0;
 
   // Markers and Polylines
   final Map<MarkerId, Marker> _markers = {};
@@ -123,22 +123,45 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
         final data = jsonDecode(res.body);
         if (data['success'] == true && data['data'] != null) {
           final track = data['data'];
+
+          // 1. Dynamic Driver Info
           if (track['driver'] != null) {
             final d = track['driver'];
             _driverName = d['name'] ?? _driverName;
             _driverPhone = d['phone'] ?? _driverPhone;
-            _driverVehicle = d['vehicle'] ?? _driverVehicle;
+            _driverVehicle = d['vehicle'] ?? (d['vehicleType'] ?? _driverVehicle);
+            if (d['rating'] != null) {
+              _driverRating = (d['rating'] as num).toDouble();
+            }
             if (d['lat'] != null && d['lng'] != null) {
               _driverLoc = LatLng((d['lat'] as num).toDouble(), (d['lng'] as num).toDouble());
             }
           }
-          if (track['customer'] != null && track['customer']['lat'] != null) {
-            final c = track['customer'];
-            _customerLoc = LatLng((c['lat'] as num).toDouble(), (c['lng'] as num).toDouble());
+          if (track['driverLocation'] != null) {
+            final dl = track['driverLocation'];
+            if (dl['lat'] != null && dl['lng'] != null) {
+              _driverLoc = LatLng((dl['lat'] as num).toDouble(), (dl['lng'] as num).toDouble());
+            }
           }
-          if (track['store'] != null && track['store']['lat'] != null) {
-            final s = track['store'];
-            _storeLoc = LatLng((s['lat'] as num).toDouble(), (s['lng'] as num).toDouble());
+
+          // 2. Dynamic Customer Location
+          final cust = track['customerLocation'] ?? track['customer'];
+          if (cust != null) {
+            final clat = (cust['lat'] as num?)?.toDouble();
+            final clng = (cust['lng'] as num?)?.toDouble();
+            if (clat != null && clng != null) {
+              _customerLoc = LatLng(clat, clng);
+            }
+          }
+
+          // 3. Dynamic Store Location
+          final st = track['storeLocation'] ?? track['store'];
+          if (st != null) {
+            final slat = (st['lat'] as num?)?.toDouble();
+            final slng = (st['lng'] as num?)?.toDouble();
+            if (slat != null && slng != null) {
+              _storeLoc = LatLng(slat, slng);
+            }
           }
         }
       }
@@ -168,8 +191,8 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
       position: _driverLoc,
       icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
       infoWindow: InfoWindow(
-        title: 'Driver: $_driverName',
-        snippet: 'Speed: ~35 km/h • En route',
+        title: _driverName.isNotEmpty ? 'Driver: $_driverName' : 'Driver',
+        snippet: _driverVehicle.isNotEmpty ? '$_driverVehicle • En route' : 'En route to destination',
       ),
       zIndexInt: 3,
     );
@@ -252,8 +275,20 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
       // Check if event belongs to this order or current driver
       final orderId = data['orderId'];
-      if (orderId != null && orderId.toString() != widget.order.id) {
-        // If orderId matches or is general broadcast
+      if (orderId != null &&
+          orderId.toString() != widget.order.id &&
+          orderId.toString() != widget.order.id.replaceAll('#', '')) {
+        // If broadcast is for a different order, skip
+      }
+
+      if (data['driverName'] != null && data['driverName'].toString().isNotEmpty) {
+        _driverName = data['driverName'].toString();
+      }
+      if (data['driverPhone'] != null && data['driverPhone'].toString().isNotEmpty) {
+        _driverPhone = data['driverPhone'].toString();
+      }
+      if (data['vehicle'] != null && data['vehicle'].toString().isNotEmpty) {
+        _driverVehicle = data['vehicle'].toString();
       }
 
       final lat = (data['lat'] as num?)?.toDouble();
@@ -566,41 +601,43 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                             Row(
                               children: [
                                 Text(
-                                  _driverName,
+                                  _driverName.isNotEmpty ? _driverName : 'Driver Assigned',
                                   style: GoogleFonts.inter(
                                     fontSize: 16.sp,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF111827),
                                   ),
                                 ),
-                                SizedBox(width: 6.w),
-                                Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFEF3C7),
-                                    borderRadius: BorderRadius.circular(6.r),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.star_rounded, size: 12, color: Color(0xFFD97706)),
-                                      SizedBox(width: 2.w),
-                                      Text(
-                                        '$_driverRating',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 11.sp,
-                                          fontWeight: FontWeight.w700,
-                                          color: const Color(0xFFB45309),
+                                if (_driverRating > 0) ...[
+                                  SizedBox(width: 6.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(6.r),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star_rounded, size: 12, color: Color(0xFFD97706)),
+                                        SizedBox(width: 2.w),
+                                        Text(
+                                          '$_driverRating',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFFB45309),
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                             SizedBox(height: 3.h),
                             Text(
-                              _driverVehicle,
+                              _driverVehicle.isNotEmpty ? _driverVehicle : 'Delivery Vehicle',
                               style: GoogleFonts.inter(
                                 fontSize: 12.sp,
                                 color: const Color(0xFF6B7280),
@@ -612,13 +649,23 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                       // Phone Call Button
                       InkWell(
                         onTap: () {
-                          Get.snackbar(
-                            'Calling Driver',
-                            'Connecting to $_driverName at $_driverPhone',
-                            snackPosition: SnackPosition.TOP,
-                            backgroundColor: const Color(0xFF10B981),
-                            colorText: Colors.white,
-                          );
+                          if (_driverPhone.isNotEmpty) {
+                            Get.snackbar(
+                              'Calling Driver',
+                              'Connecting to ${_driverName.isNotEmpty ? _driverName : "Driver"} at $_driverPhone',
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: const Color(0xFF10B981),
+                              colorText: Colors.white,
+                            );
+                          } else {
+                            Get.snackbar(
+                              'Driver Contact',
+                              'Driver contact info will appear once connected.',
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: const Color(0xFF3B82F6),
+                              colorText: Colors.white,
+                            );
+                          }
                         },
                         borderRadius: BorderRadius.circular(14.r),
                         child: Container(

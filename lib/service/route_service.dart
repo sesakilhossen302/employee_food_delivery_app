@@ -33,7 +33,7 @@ class RouteService {
     LatLng origin,
     LatLng destination,
   ) async {
-    const key = AppConstants.googleMapsApiKey;
+    final key = AppConstants.googleMapsApiKey;
     if (key.isEmpty) return [];
 
     final url = Uri.parse(
