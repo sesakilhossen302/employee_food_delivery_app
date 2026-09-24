@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import '../../../../service/api_client.dart';
@@ -25,22 +26,62 @@ class DriverController extends GetxController {
   final RxDouble cashCollectedInHand = 0.0.obs;
   final RxInt completedCount = 0.obs;
 
-  /// Live Driver Coordinates & Movement
+  /// Live Driver Real Device Coordinates & Movement
   final RxDouble driverLat = 23.8103.obs;
   final RxDouble driverLng = 90.4125.obs;
-  final RxDouble driverHeading = 45.0.obs;
+  final RxDouble driverHeading = 0.0.obs;
   final RxList<LatLng> roadPolylinePoints = <LatLng>[].obs;
 
   RxDouble get currentLatitude => driverLat;
   RxDouble get currentLongitude => driverLng;
 
   Timer? _locationTimer;
+  StreamSubscription<Position>? _positionStreamSub;
 
   @override
   void onInit() {
     super.onInit();
+    // 1. Acquire real device GPS immediately
+    updateDriverGpsLocation();
+    // 2. Fetch driver stats & orders
     fetchDriverData();
+    // 3. Setup Sockets
     _initSocket();
+  }
+
+  /// Request Location Permission & Acquire Real GPS Position
+  Future<void> updateDriverGpsLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        debugPrint('Location services are disabled on device.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('Location permissions are permanently denied.');
+        return;
+      }
+
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+        driverLat.value = position.latitude;
+        driverLng.value = position.longitude;
+        driverHeading.value = position.heading;
+        debugPrint('📍 Driver Real GPS acquired: ${position.latitude}, ${position.longitude}');
+      }
+    } catch (e) {
+      debugPrint('Real GPS fetch error: $e');
+    }
   }
 
   void _initSocket() {
@@ -118,10 +159,8 @@ class DriverController extends GetxController {
     activeOrder.value = order;
     currentNavIndex.value = 0; // Deliveries tab
 
-    if (order.customerLat != null && order.customerLng != null) {
-      driverLat.value = order.customerLat! - 0.007;
-      driverLng.value = order.customerLng! - 0.007;
-    }
+    // Fetch fresh real GPS location from device
+    await updateDriverGpsLocation();
 
     final savedName = await SharePrefsHelper.getString('saved_user_name');
     final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
@@ -230,67 +269,74 @@ class DriverController extends GetxController {
   void _startLocationBroadcasting() async {
     _stopLocationBroadcasting();
 
+    // 1. Get initial GPS location
+    await updateDriverGpsLocation();
+
+    final origin = LatLng(driverLat.value, driverLng.value);
     final custLat = activeOrder.value?.customerLat ?? 23.8197;
     final custLng = activeOrder.value?.customerLng ?? 90.4277;
     final destination = LatLng(custLat, custLng);
 
-    // Initial driver origin: nearby in the city (0.007 away)
-    final origin = LatLng(custLat - 0.007, custLng - 0.007);
-
-    // Compute real road routing
+    // Compute genuine road route from driver's REAL GPS position to customer
     final route = await RouteService.getRoadRoute(origin: origin, destination: destination);
     roadPolylinePoints.assignAll(route);
 
-    int routeIndex = 0;
-    if (route.isNotEmpty) {
-      driverLat.value = route.first.latitude;
-      driverLng.value = route.first.longitude;
-    } else {
-      driverLat.value = origin.latitude;
-      driverLng.value = origin.longitude;
+    // 2. Start continuous real-time device GPS stream
+    try {
+      _positionStreamSub?.cancel();
+      _positionStreamSub = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 3, // Broadcast every 3 meters of movement
+        ),
+      ).listen((Position pos) {
+        driverLat.value = pos.latitude;
+        driverLng.value = pos.longitude;
+        driverHeading.value = pos.heading;
+        _broadcastRealTimeGps(pos.latitude, pos.longitude, pos.heading, pos.speed);
+      });
+    } catch (e) {
+      debugPrint('Position stream note: $e');
     }
 
-    final savedName = await SharePrefsHelper.getString('saved_user_name');
-    final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
-    final currentDriverName = savedName.isNotEmpty ? savedName : 'Delivery Driver';
-    final currentDriverPhone = savedPhone.isNotEmpty ? savedPhone : '+880 1712-345678';
-
-    _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    // 3. Periodic timer to ensure backend and customer always have fresh location
+    _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       if (activeOrder.value == null) {
         timer.cancel();
         return;
       }
-
-      // Step along the road route towards destination
-      if (route.isNotEmpty && routeIndex < route.length - 1) {
-        routeIndex++;
-        final nextPoint = route[routeIndex];
-        driverLat.value = nextPoint.latitude;
-        driverLng.value = nextPoint.longitude;
-      }
-
-      // Emit live driver location over Socket.io every 5 seconds
-      try {
-        final payload = {
-          'driverId': 'driver_active',
-          'driverName': currentDriverName,
-          'driverPhone': currentDriverPhone,
-          'orderId': activeOrder.value?.backendId ?? activeOrder.value?.id,
-          'lat': driverLat.value,
-          'lng': driverLng.value,
-          'heading': driverHeading.value,
-          'speed': 32.5,
-          'timestamp': DateTime.now().millisecondsSinceEpoch,
-        };
-        SocketService.socket.emit('driver_location', payload);
-        debugPrint('[Driver Location] Emitted 5-sec GPS update: $payload');
-      } catch (e) {
-        debugPrint('Driver location emit error: $e');
-      }
+      _broadcastRealTimeGps(driverLat.value, driverLng.value, driverHeading.value, 20.0);
     });
   }
 
+  void _broadcastRealTimeGps(double lat, double lng, double heading, double speed) async {
+    try {
+      final savedName = await SharePrefsHelper.getString('saved_user_name');
+      final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
+      final currentDriverName = savedName.isNotEmpty ? savedName : 'Delivery Driver';
+      final currentDriverPhone = savedPhone.isNotEmpty ? savedPhone : '+880 1712-345678';
+
+      final payload = {
+        'driverId': 'driver_active',
+        'driverName': currentDriverName,
+        'driverPhone': currentDriverPhone,
+        'orderId': activeOrder.value?.backendId ?? activeOrder.value?.id,
+        'lat': lat,
+        'lng': lng,
+        'heading': heading,
+        'speed': speed,
+        'timestamp': DateTime.now().millisecondsSinceEpoch,
+      };
+      SocketService.socket.emit('driver_location', payload);
+      debugPrint('[Driver Real GPS Broadcast]: $payload');
+    } catch (e) {
+      debugPrint('Driver location emit error: $e');
+    }
+  }
+
   void _stopLocationBroadcasting() {
+    _positionStreamSub?.cancel();
+    _positionStreamSub = null;
     _locationTimer?.cancel();
     _locationTimer = null;
   }

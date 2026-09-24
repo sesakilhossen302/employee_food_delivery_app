@@ -33,6 +33,9 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
   @override
   void initState() {
     super.initState();
+    controller.updateDriverGpsLocation().then((_) {
+      if (mounted) _updateMapEntities();
+    });
     _loadCustomMarkers();
 
     // Listen to driver GPS movements and active order changes
@@ -148,6 +151,16 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
   void _fitMapBounds(LatLng p1, LatLng p2) {
     if (_mapController == null) return;
     try {
+      final double latDiff = (p1.latitude - p2.latitude).abs();
+      final double lngDiff = (p1.longitude - p2.longitude).abs();
+
+      if (latDiff < 0.0005 && lngDiff < 0.0005) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(p1, 15.5),
+        );
+        return;
+      }
+
       final southwest = LatLng(
         p1.latitude < p2.latitude ? p1.latitude : p2.latitude,
         p1.longitude < p2.longitude ? p1.longitude : p2.longitude,
