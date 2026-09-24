@@ -59,6 +59,10 @@ class OrderModel {
   final String paymentMethod;
   final double progressPercent;
   final bool hasActiveBorder;
+  final double? customerLat;
+  final double? customerLng;
+  final String? assignedDriverName;
+  final String? assignedDriverPhone;
 
   OrderModel({
     required this.id,
@@ -78,6 +82,10 @@ class OrderModel {
     required this.paymentMethod,
     required this.progressPercent,
     this.hasActiveBorder = false,
+    this.customerLat,
+    this.customerLng,
+    this.assignedDriverName,
+    this.assignedDriverPhone,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
@@ -123,6 +131,16 @@ class OrderModel {
 
     final isDeliv = (json['fulfillmentType'] ?? 'delivery').toString().toLowerCase() == 'delivery';
     final customer = json['customer'] as Map<String, dynamic>?;
+    final cLat = (customer?['lat'] as num?)?.toDouble() ??
+        (json['customerLocation'] is Map ? (json['customerLocation']['lat'] as num?)?.toDouble() : null);
+    final cLng = (customer?['lng'] as num?)?.toDouble() ??
+        (json['customerLocation'] is Map ? (json['customerLocation']['lng'] as num?)?.toDouble() : null);
+
+    final assignedDriver = json['assignedDriver'] as Map<String, dynamic>?;
+    final driverName = assignedDriver?['name']?.toString() ??
+        (json['driver'] is Map ? json['driver']['name']?.toString() : null);
+    final driverPhone = assignedDriver?['phone']?.toString() ??
+        (json['driver'] is Map ? json['driver']['phone']?.toString() : null);
 
     final rawItems = json['items'] as List?;
     final parsedItems = rawItems != null
@@ -151,6 +169,10 @@ class OrderModel {
           : 'Cash On Delivery',
       progressPercent: progress,
       hasActiveBorder: mappedStatus != OrderStatus.delivered,
+      customerLat: cLat,
+      customerLng: cLng,
+      assignedDriverName: driverName,
+      assignedDriverPhone: driverPhone,
     );
   }
 

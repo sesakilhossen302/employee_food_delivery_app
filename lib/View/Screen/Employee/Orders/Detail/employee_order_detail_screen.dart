@@ -169,34 +169,19 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
   /// MINI MAP WIDGET (Image 2)
   /// --------------------------------------------------------------------------
   Widget _buildMiniMapWidget() {
-    const storeLoc = LatLng(46.8772, -96.7898);
-    const driverLoc = LatLng(46.8845, -96.7960);
-    const custLoc = LatLng(46.8920, -96.8050);
+    final custLoc = LatLng(
+      order.customerLat ?? 23.8103,
+      order.customerLng ?? 90.4125,
+    );
+
+    final bool isOutForDelivery = order.status == OrderStatus.outForDelivery;
 
     final miniMarkers = <Marker>{
-      Marker(
-        markerId: const MarkerId('mini_store'),
-        position: storeLoc,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      ),
-      Marker(
-        markerId: const MarkerId('mini_driver'),
-        position: driverLoc,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-      ),
       Marker(
         markerId: const MarkerId('mini_cust'),
         position: custLoc,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      ),
-    };
-
-    final miniPolylines = <Polyline>{
-      const Polyline(
-        polylineId: PolylineId('mini_route'),
-        points: [storeLoc, driverLoc, custLoc],
-        color: AppColors.primaryAmber,
-        width: 4,
+        infoWindow: InfoWindow(title: 'Delivery Address', snippet: order.deliveryAddress),
       ),
     };
 
@@ -221,17 +206,16 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
           child: Stack(
             children: [
-              /// Real Google Map preview
+              /// Google Map preview centered on customer location
               Positioned.fill(
                 child: AbsorbPointer(
                   absorbing: true,
                   child: GoogleMap(
-                    initialCameraPosition: const CameraPosition(
-                      target: LatLng(46.8845, -96.7960),
-                      zoom: 13.0,
+                    initialCameraPosition: CameraPosition(
+                      target: custLoc,
+                      zoom: 15.0,
                     ),
                     markers: miniMarkers,
-                    polylines: miniPolylines,
                     zoomControlsEnabled: false,
                     myLocationButtonEnabled: false,
                     compassEnabled: false,
@@ -240,18 +224,18 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                 ),
               ),
 
-              /// "On the way" floating pill
+              /// Dynamic status floating pill
               Positioned(
                 top: 14.h,
                 right: 16.w,
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryAmber,
+                    color: isOutForDelivery ? AppColors.primaryAmber : const Color(0xFF1E3A8A),
                     borderRadius: BorderRadius.circular(16.r),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryAmber.withValues(alpha: 0.3),
+                        color: (isOutForDelivery ? AppColors.primaryAmber : const Color(0xFF1E3A8A)).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -260,10 +244,14 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.local_shipping_rounded, size: 14, color: Colors.white),
+                      Icon(
+                        isOutForDelivery ? Icons.local_shipping_rounded : Icons.schedule_rounded,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                       SizedBox(width: 4.w),
                       Text(
-                        'On the way',
+                        isOutForDelivery ? 'On the way' : order.statusText,
                         style: GoogleFonts.inter(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w700,
@@ -301,14 +289,16 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                           Container(
                             width: 8.w,
                             height: 8.w,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
+                            decoration: BoxDecoration(
+                              color: isOutForDelivery ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                               shape: BoxShape.circle,
                             ),
                           ),
                           SizedBox(width: 8.w),
                           Text(
-                            'Live Driver GPS (5s Sync)',
+                            isOutForDelivery
+                                ? 'Live Driver GPS (5s Sync)'
+                                : 'Waiting for Driver Assignment',
                             style: GoogleFonts.inter(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
@@ -320,7 +310,7 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'Open Map',
+                            'Track Live',
                             style: GoogleFonts.inter(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w700,
@@ -328,7 +318,11 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                             ),
                           ),
                           SizedBox(width: 4.w),
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.primaryAmber),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: AppColors.primaryAmber,
+                          ),
                         ],
                       ),
                     ],

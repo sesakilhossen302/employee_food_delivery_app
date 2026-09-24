@@ -7,25 +7,76 @@ import '../Utils/AppConst/app_const.dart';
 
 class RouteService {
   /// Fetches real road routing between origin and destination.
-  /// 1. Attempts Google Directions API using configured API Key.
-  /// 2. If Google Directions API requires billing or fails, generates a
-  ///    realistic street-by-street grid road path (NOT a straight line)
-  ///    with intermediate turn waypoints and street blocks.
+  /// 1. First attempts Google Directions API if a valid key is provided.
+  /// 2. If Google Directions is unavailable/fails, fetches from OSRM
+  ///    (Open Source Routing Machine), which provides 100% REAL ROAD geometries
+  ///    tracing actual roads, streets, intersections, and highways worldwide.
   static Future<List<LatLng>> getRoadRoute({
     required LatLng origin,
     required LatLng destination,
   }) async {
+    // 1. Try Google Directions API
     try {
       final googleRoute = await _fetchGoogleDirections(origin, destination);
       if (googleRoute.isNotEmpty) {
+        debugPrint('[RouteService] Using Google Directions route (${googleRoute.length} points)');
         return googleRoute;
       }
     } catch (e) {
-      debugPrint('Google Directions note: $e');
+      debugPrint('[RouteService] Google Directions note: $e');
     }
 
-    // Fallback: Generate authentic street-following road path
-    return _generateStreetRoadPath(origin, destination);
+    // 2. Try OSRM (100% Real Roads Worldwide with exact street geometry)
+    try {
+      final osrmRoute = await _fetchOsrmRoute(origin, destination);
+      if (osrmRoute.isNotEmpty) {
+        debugPrint('[RouteService] Using OSRM Real Road route (${osrmRoute.length} points)');
+        return osrmRoute;
+      }
+    } catch (e) {
+      debugPrint('[RouteService] OSRM Route error: $e');
+    }
+
+    // Fallback: direct line between origin and destination
+    return [origin, destination];
+  }
+
+  /// Query OSRM Driving API (Free, high-accuracy real-road network)
+  static Future<List<LatLng>> _fetchOsrmRoute(
+    LatLng origin,
+    LatLng destination,
+  ) async {
+    final url = Uri.parse(
+      'https://router.project-osrm.org/route/v1/driving/'
+      '${origin.longitude},${origin.latitude};'
+      '${destination.longitude},${destination.latitude}'
+      '?overview=full&geometries=geojson',
+    );
+
+    final res = await http.get(url).timeout(const Duration(seconds: 6));
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data['code'] == 'Ok' &&
+          data['routes'] is List &&
+          data['routes'].isNotEmpty) {
+        final geometry = data['routes'][0]['geometry'];
+        if (geometry != null && geometry['coordinates'] is List) {
+          final List rawCoords = geometry['coordinates'];
+          final List<LatLng> path = [];
+          for (var pt in rawCoords) {
+            if (pt is List && pt.length >= 2) {
+              final lng = (pt[0] as num).toDouble();
+              final lat = (pt[1] as num).toDouble();
+              path.add(LatLng(lat, lng));
+            }
+          }
+          if (path.isNotEmpty) {
+            return path;
+          }
+        }
+      }
+    }
+    return [];
   }
 
   /// Query Google Directions API
@@ -88,36 +139,6 @@ class RouteService {
       poly.add(LatLng((lat / 1E5), (lng / 1E5)));
     }
     return poly;
-  }
-
-  /// Generates a realistic street road path following city blocks & turns
-  /// (Ensures the route follows streets instead of a straight direct line).
-  static List<LatLng> _generateStreetRoadPath(LatLng start, LatLng end) {
-    final List<LatLng> points = [start];
-
-    final double latDiff = end.latitude - start.latitude;
-    final double lngDiff = end.longitude - start.longitude;
-
-    // We add 4-6 street turns resembling realistic city grid navigation
-    const int segments = 5;
-    for (int i = 1; i < segments; i++) {
-      final double progress = i / segments;
-
-      // Add minor zigzag representing street intersections
-      double lat = start.latitude + latDiff * progress;
-      double lng = start.longitude + lngDiff * progress;
-
-      if (i % 2 == 1) {
-        lat += (i.isOdd ? 0.0008 : -0.0008) * (latDiff >= 0 ? 1 : -1);
-      } else {
-        lng += (i.isEven ? 0.0008 : -0.0008) * (lngDiff >= 0 ? 1 : -1);
-      }
-
-      points.add(LatLng(lat, lng));
-    }
-
-    points.add(end);
-    return points;
   }
 
   /// Computes distance in kilometers between two coordinates
