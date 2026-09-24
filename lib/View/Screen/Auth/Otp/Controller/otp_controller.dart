@@ -153,7 +153,6 @@ class OtpController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
-    pinController.dispose();
     super.onClose();
   }
 }

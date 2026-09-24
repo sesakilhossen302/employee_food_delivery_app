@@ -6,6 +6,7 @@ import '../../../../../Core/AppRoute/app_route.dart';
 import '../../../../../Utils/AppColors/app_colors.dart';
 import '../../../../../service/api_client.dart';
 import '../../../../../service/api_url.dart';
+import '../../SignIn/Controller/sign_in_controller.dart';
 
 class ForgotPasswordController extends GetxController {
   final GlobalKey<FormState> emailFormKey = GlobalKey<FormState>();
@@ -220,7 +221,22 @@ class ForgotPasswordController extends GetxController {
                   child: ElevatedButton(
                     onPressed: () {
                       Get.back();
-                      Get.offAllNamed(AppRoute.signInScreen);
+                      if (Get.isRegistered<SignInController>()) {
+                        final signInCtrl = Get.find<SignInController>();
+                        signInCtrl.passwordController.clear();
+                        signInCtrl.isLoading.value = false;
+                      }
+                      bool found = false;
+                      navigator?.popUntil((route) {
+                        if (route.settings.name == AppRoute.signInScreen) {
+                          found = true;
+                          return true;
+                        }
+                        return false;
+                      });
+                      if (!found) {
+                        Get.offAllNamed(AppRoute.signInScreen);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryColor,
@@ -259,10 +275,6 @@ class ForgotPasswordController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
-    emailController.dispose();
-    pinController.dispose();
-    newPasswordController.dispose();
-    confirmPasswordController.dispose();
     super.onClose();
   }
 }

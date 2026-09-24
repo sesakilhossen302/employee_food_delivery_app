@@ -182,12 +182,4 @@ class SignInController extends GetxController {
     Get.toNamed(AppRoute.forgotPasswordScreen, arguments: emailController.text.trim());
   }
 
-  @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    nameController.dispose();
-    phoneController.dispose();
-    super.onClose();
-  }
 }
