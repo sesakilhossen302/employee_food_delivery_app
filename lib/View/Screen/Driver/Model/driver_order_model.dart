@@ -24,6 +24,8 @@ class DriverOrderModel {
   DriverOrderStatus status;
   final String timeEst;
   final String orderTime;
+  final double? customerLat;
+  final double? customerLng;
 
   DriverOrderModel({
     required this.id,
@@ -41,6 +43,8 @@ class DriverOrderModel {
     this.status = DriverOrderStatus.readyForPickup,
     this.timeEst = '20–30 min',
     required this.orderTime,
+    this.customerLat,
+    this.customerLng,
   });
 
   factory DriverOrderModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +89,19 @@ class DriverOrderModel {
     final double tipVal = (pricing['tip'] ?? json['tip'] ?? 0.0).toDouble();
     final double totalVal = (json['total'] ?? pricing['total'] ?? 0.0).toDouble();
 
+    double? cLat;
+    double? cLng;
+    if (customer['lat'] != null) {
+      cLat = double.tryParse(customer['lat'].toString());
+    } else if (json['customerLocation'] is Map && json['customerLocation']['lat'] != null) {
+      cLat = double.tryParse(json['customerLocation']['lat'].toString());
+    }
+    if (customer['lng'] != null) {
+      cLng = double.tryParse(customer['lng'].toString());
+    } else if (json['customerLocation'] is Map && json['customerLocation']['lng'] != null) {
+      cLng = double.tryParse(json['customerLocation']['lng'].toString());
+    }
+
     return DriverOrderModel(
       id: json['orderNumber'] ?? (json['_id'] != null ? '#${json['_id'].toString().substring(json['_id'].toString().length - 6).toUpperCase()}' : '#ORD-LIVE'),
       backendId: json['_id']?.toString() ?? json['id']?.toString(),
@@ -101,6 +118,8 @@ class DriverOrderModel {
       status: parsedStatus,
       timeEst: '15–25 min',
       orderTime: formattedTime,
+      customerLat: cLat,
+      customerLng: cLng,
     );
   }
 

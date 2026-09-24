@@ -26,8 +26,8 @@ class DriverController extends GetxController {
   final RxInt completedCount = 0.obs;
 
   /// Live Driver Coordinates & Movement
-  final RxDouble driverLat = 46.8820.obs;
-  final RxDouble driverLng = (-96.7940).obs;
+  final RxDouble driverLat = 23.8103.obs;
+  final RxDouble driverLng = 90.4125.obs;
   final RxDouble driverHeading = 45.0.obs;
   final RxList<LatLng> roadPolylinePoints = <LatLng>[].obs;
 

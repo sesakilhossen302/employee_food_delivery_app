@@ -72,6 +72,8 @@ class SavedAddressModel {
   final String title; // 'Home', 'Work', 'Other'
   final String address;
   final String note;
+  final double? lat;
+  final double? lng;
   bool isDefault;
 
   SavedAddressModel({
@@ -79,6 +81,8 @@ class SavedAddressModel {
     required this.title,
     required this.address,
     required this.note,
+    this.lat,
+    this.lng,
     this.isDefault = false,
   });
 
@@ -88,15 +92,21 @@ class SavedAddressModel {
       title: json['title'] ?? 'Home',
       address: json['address'] ?? '',
       note: json['instructions'] ?? json['note'] ?? '',
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
       isDefault: json['isDefault'] ?? false,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'title': title,
       'address': address,
       'instructions': note,
+      'lat': lat,
+      'lng': lng,
+      'isDefault': isDefault,
     };
   }
 }
@@ -142,13 +152,22 @@ class ProfileController extends GetxController {
 
   Future<void> loadAddresses() async {
     try {
+      // 1. Load from local cache first for instant response
+      final cachedStr = await SharePrefsHelper.getString('cached_user_addresses');
+      if (cachedStr.isNotEmpty) {
+        final List decoded = jsonDecode(cachedStr);
+        addresses.assignAll(decoded.map((a) => SavedAddressModel.fromJson(a)).toList());
+      }
+      
+      // 2. Sync from backend
       final response = await ApiClient.getData(ApiConstant.address);
       if (response.statusCode == 200 && response.body != null && response.body['data'] is List) {
         final List list = response.body['data'];
         addresses.assignAll(list.map((a) => SavedAddressModel.fromJson(a)).toList());
+        await SharePrefsHelper.setString('cached_user_addresses', jsonEncode(addresses.map((a) => a.toJson()).toList()));
       }
     } catch (e) {
-      debugPrint('Load addresses error: $e');
+      debugPrint('Load addresses note: $e');
     }
   }
 
@@ -307,11 +326,41 @@ class ProfileController extends GetxController {
     required String title,
     required String address,
     required String note,
+    double? lat,
+    double? lng,
   }) async {
+    final newAddr = SavedAddressModel(
+      id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
+      title: title,
+      address: address,
+      note: note,
+      lat: lat,
+      lng: lng,
+      isDefault: addresses.isEmpty,
+    );
+
+    // If new address is set as default, mark others false
+    if (newAddr.isDefault) {
+      for (var a in addresses) {
+        a.isDefault = false;
+      }
+    }
+
+    addresses.add(newAddr);
+    addresses.refresh();
+
+    // Save to local cache
+    await SharePrefsHelper.setString(
+      'cached_user_addresses',
+      jsonEncode(addresses.map((a) => a.toJson()).toList()),
+    );
+
     final payload = {
       'title': title,
       'address': address,
       'instructions': note,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
     };
 
     try {
@@ -319,28 +368,13 @@ class ProfileController extends GetxController {
       if (res.statusCode == 200 && res.body != null && res.body['data'] is List) {
         final List list = res.body['data'];
         addresses.assignAll(list.map((a) => SavedAddressModel.fromJson(a)).toList());
-      } else {
-        addresses.add(
-          SavedAddressModel(
-            id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
-            title: title,
-            address: address,
-            note: note,
-            isDefault: addresses.isEmpty,
-          ),
+        await SharePrefsHelper.setString(
+          'cached_user_addresses',
+          jsonEncode(addresses.map((a) => a.toJson()).toList()),
         );
       }
       Fluttertoast.showToast(msg: 'Address saved successfully!');
     } catch (e) {
-      addresses.add(
-        SavedAddressModel(
-          id: 'ADDR-${DateTime.now().millisecondsSinceEpoch}',
-          title: title,
-          address: address,
-          note: note,
-          isDefault: addresses.isEmpty,
-        ),
-      );
       Fluttertoast.showToast(msg: 'Address saved!');
     }
   }
@@ -350,11 +384,20 @@ class ProfileController extends GetxController {
       a.isDefault = (a.id == id);
     }
     addresses.refresh();
+    SharePrefsHelper.setString(
+      'cached_user_addresses',
+      jsonEncode(addresses.map((a) => a.toJson()).toList()),
+    );
     Fluttertoast.showToast(msg: 'Default address updated');
   }
 
   void deleteAddress(String id) {
     addresses.removeWhere((a) => a.id == id);
+    addresses.refresh();
+    SharePrefsHelper.setString(
+      'cached_user_addresses',
+      jsonEncode(addresses.map((a) => a.toJson()).toList()),
+    );
     Fluttertoast.showToast(msg: 'Address removed');
   }
 }

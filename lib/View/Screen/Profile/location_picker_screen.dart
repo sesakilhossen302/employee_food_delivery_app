@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import 'Controller/profile_controller.dart';
@@ -25,9 +24,12 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   bool _isLoading = true;
   
   final TextEditingController _titleCtrl = TextEditingController();
+  final TextEditingController _addressCtrl = TextEditingController();
   final TextEditingController _noteCtrl = TextEditingController();
   
-  final ProfileController _profileController = Get.find<ProfileController>();
+  final ProfileController _profileController = Get.isRegistered<ProfileController>()
+      ? Get.find<ProfileController>()
+      : Get.put(ProfileController());
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _selectedLatLng = LatLng(position.latitude, position.longitude);
+      _addressCtrl.text = 'Location (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
       _isLoading = false;
     });
 
@@ -80,27 +83,31 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   
   void _saveAddress() {
     if (_titleCtrl.text.trim().isEmpty) {
-      Fluttertoast.showToast(msg: 'Please enter an address label');
+      Fluttertoast.showToast(msg: 'Please enter an address label (e.g. Home, Office)');
       return;
     }
     
-    // Convert LatLng to a string to store it in the address field since we don't have separate lat/lng fields in the model yet.
-    // Or we can save it specifically. The backend payload for Profile currently takes a string address.
-    // We will save it in a formatted way: "lat,lng" so the checkout screen can parse it.
-    
-    final formattedLat = _selectedLatLng.latitude.toStringAsFixed(6);
-    final formattedLng = _selectedLatLng.longitude.toStringAsFixed(6);
-    
-    // We store the actual coordinates in the address string, or in note. Let's store in address.
-    final coordsString = '$formattedLat,$formattedLng';
+    final lat = _selectedLatLng.latitude;
+    final lng = _selectedLatLng.longitude;
+    final addressText = _addressCtrl.text.trim().isNotEmpty
+        ? _addressCtrl.text.trim()
+        : 'Location (${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
     
     _profileController.addAddress(
       title: _titleCtrl.text.trim(),
-      address: coordsString, // Save coordinates as address string for parsing later
+      address: addressText,
       note: _noteCtrl.text.trim(),
+      lat: lat,
+      lng: lng,
     );
     
-    Get.back();
+    Get.back(result: {
+      'title': _titleCtrl.text.trim(),
+      'address': addressText,
+      'instructions': _noteCtrl.text.trim(),
+      'lat': lat,
+      'lng': lng,
+    });
   }
 
   @override
@@ -197,7 +204,18 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                   TextField(
                     controller: _titleCtrl,
                     decoration: InputDecoration(
-                      hintText: 'Label (e.g. Home, Office)',
+                      hintText: 'Label (e.g. Home, Office, Gym)',
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                    ),
+                  ),
+                  SizedBox(height: 10.h),
+                  TextField(
+                    controller: _addressCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Address / Street (or use selected pin)',
                       filled: true,
                       fillColor: const Color(0xFFF9FAFB),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: BorderSide.none),

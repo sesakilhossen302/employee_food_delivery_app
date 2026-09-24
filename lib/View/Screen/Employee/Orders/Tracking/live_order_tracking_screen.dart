@@ -25,10 +25,9 @@ class LiveOrderTrackingScreen extends StatefulWidget {
 class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   GoogleMapController? _mapController;
 
-  // Dynamic Locations initialized from backend
-  LatLng _driverLoc = const LatLng(46.8820, -96.7940);
-  LatLng _customerLoc = const LatLng(46.8920, -96.8050);
-  LatLng _storeLoc = const LatLng(46.8772, -96.7898);
+  // Dynamic Locations initialized from order / backend
+  LatLng _driverLoc = const LatLng(23.8050, 90.4080);
+  LatLng _customerLoc = const LatLng(23.8103, 90.4125);
 
   String _driverName = '';
   String _driverPhone = '';
@@ -48,7 +47,6 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
   BitmapDescriptor? _driverIcon;
   BitmapDescriptor? _customerIcon;
-  BitmapDescriptor? _storeIcon;
 
   // Socket listener registration
   dynamic _socketHandler;
@@ -68,13 +66,13 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   }
 
   Future<void> _initLiveTracking() async {
-    // 1. Generate Custom Pin Markers with visible "Driver", "Customer", and "Store"
+    // 1. Generate Custom Circular Pin Markers (small clean icons, zero text)
     await _buildCustomMarkers();
 
     // 2. Fetch server tracking info for this order
     await _fetchInitialTrackingData();
 
-    // 3. Calculate road route (turn-by-turn road polyline)
+    // 3. Calculate road route (turn-by-turn road polyline between Driver and Customer)
     await _calculateRoadRoute();
 
     // 4. Listen to Socket.io driver updates (every 5 seconds)
@@ -88,25 +86,16 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
   Future<void> _buildCustomMarkers() async {
     try {
-      _driverIcon = await MapMarkerHelper.createLabeledMarker(
-        label: 'Driver',
+      _driverIcon = await MapMarkerHelper.createCircularMarker(
         icon: Icons.delivery_dining_rounded,
         primaryColor: const Color(0xFFF59E0B),
-        textColor: Colors.white,
+        diameter: 46.0,
       );
 
-      _customerIcon = await MapMarkerHelper.createLabeledMarker(
-        label: 'Customer',
+      _customerIcon = await MapMarkerHelper.createCircularMarker(
         icon: Icons.home_rounded,
         primaryColor: const Color(0xFF1E3A8A),
-        textColor: Colors.white,
-      );
-
-      _storeIcon = await MapMarkerHelper.createLabeledMarker(
-        label: 'Store',
-        icon: Icons.storefront_rounded,
-        primaryColor: const Color(0xFF059669),
-        textColor: Colors.white,
+        diameter: 46.0,
       );
     } catch (e) {
       debugPrint('Error generating custom marker icons: $e');
@@ -153,16 +142,6 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
               _customerLoc = LatLng(clat, clng);
             }
           }
-
-          // 3. Dynamic Store Location
-          final st = track['storeLocation'] ?? track['store'];
-          if (st != null) {
-            final slat = (st['lat'] as num?)?.toDouble();
-            final slng = (st['lng'] as num?)?.toDouble();
-            if (slat != null && slng != null) {
-              _storeLoc = LatLng(slat, slng);
-            }
-          }
         }
       }
     } catch (e) {
@@ -185,7 +164,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     _remainingKm = RouteService.calculateDistanceKm(_driverLoc, _customerLoc);
     _estimatedMins = RouteService.estimateMinutes(_remainingKm);
 
-    // 1. Driver Marker
+    // 1. Driver Marker (Compact Circular Pin)
     final driverMarker = Marker(
       markerId: const MarkerId('driver_marker'),
       position: _driverLoc,
@@ -198,7 +177,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
       zIndexInt: 3,
     );
 
-    // 2. Customer Marker
+    // 2. Customer Marker (Compact Circular Pin)
     final customerMarker = Marker(
       markerId: const MarkerId('customer_marker'),
       position: _customerLoc,
@@ -211,22 +190,8 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
       zIndexInt: 2,
     );
 
-    // 3. Store Marker
-    final storeMarker = Marker(
-      markerId: const MarkerId('store_marker'),
-      position: _storeLoc,
-      anchor: const Offset(0.5, 0.89),
-      icon: _storeIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-      infoWindow: const InfoWindow(
-        title: 'Store (Little Arrows)',
-        snippet: 'Origin Pickup Location',
-      ),
-      zIndexInt: 1,
-    );
-
     _markers[driverMarker.markerId] = driverMarker;
     _markers[customerMarker.markerId] = customerMarker;
-    _markers[storeMarker.markerId] = storeMarker;
 
     // Remaining road route polyline from driver's current spot to customer
     List<LatLng> remainingRoute = [];
@@ -322,8 +287,8 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   void _fitMapBounds() {
     if (_mapController == null) return;
 
-    final lats = [_driverLoc.latitude, _customerLoc.latitude, _storeLoc.latitude];
-    final lngs = [_driverLoc.longitude, _customerLoc.longitude, _storeLoc.longitude];
+    final lats = [_driverLoc.latitude, _customerLoc.latitude];
+    final lngs = [_driverLoc.longitude, _customerLoc.longitude];
 
     final double minLat = lats.reduce((a, b) => a < b ? a : b);
     final double maxLat = lats.reduce((a, b) => a > b ? a : b);

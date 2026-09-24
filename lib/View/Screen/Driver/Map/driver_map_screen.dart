@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,31 +25,43 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
   BitmapDescriptor? _driverIcon;
   BitmapDescriptor? _customerIcon;
 
-  final LatLng _defaultCustomerLoc = const LatLng(48.1565, -103.6185);
+  double _routeDistanceKm = 0.0;
+  int _routeEtaMins = 5;
+  Worker? _driverLatWorker;
+  Worker? _activeOrderWorker;
 
   @override
   void initState() {
     super.initState();
     _loadCustomMarkers();
+
+    // Listen to driver GPS movements and active order changes
+    _driverLatWorker = ever(controller.driverLat, (_) => _updateMapEntities());
+    _activeOrderWorker = ever(controller.activeOrder, (_) => _updateMapEntities());
+  }
+
+  @override
+  void dispose() {
+    _driverLatWorker?.dispose();
+    _activeOrderWorker?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCustomMarkers() async {
     try {
-      _driverIcon = await MapMarkerHelper.createLabeledMarker(
-        label: 'Driver',
+      _driverIcon = await MapMarkerHelper.createCircularMarker(
         icon: Icons.delivery_dining_rounded,
         primaryColor: const Color(0xFFF59E0B),
-        textColor: Colors.white,
       );
 
-      _customerIcon = await MapMarkerHelper.createLabeledMarker(
-        label: 'Customer',
+      _customerIcon = await MapMarkerHelper.createCircularMarker(
         icon: Icons.home_rounded,
         primaryColor: const Color(0xFF1E3A8A),
-        textColor: Colors.white,
       );
 
-      _updateMapEntities();
+      if (mounted) {
+        _updateMapEntities();
+      }
     } catch (e) {
       debugPrint('DriverMapScreen marker load note: $e');
     }
@@ -59,20 +72,33 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
       controller.currentLatitude.value,
       controller.currentLongitude.value,
     );
-    final customerLoc = _defaultCustomerLoc;
 
-    // 1. Fetch road path (not a straight line)
+    final order = controller.activeOrder.value;
+    LatLng customerLoc;
+    if (order != null && order.customerLat != null && order.customerLng != null) {
+      customerLoc = LatLng(order.customerLat!, order.customerLng!);
+    } else {
+      // Offset slightly from driver if no customer order location
+      customerLoc = LatLng(driverLoc.latitude + 0.012, driverLoc.longitude + 0.012);
+    }
+
+    // 1. Calculate road path between live driver and customer destination
     final roadPath = await RouteService.getRoadRoute(
       origin: driverLoc,
       destination: customerLoc,
     );
 
-    // 2. Markers
+    // Calculate distance and ETA
+    final dist = RouteService.calculateDistanceKm(driverLoc, customerLoc);
+    _routeDistanceKm = dist;
+    _routeEtaMins = (dist * 3.2).round().clamp(2, 60);
+
+    // 2. Circular Pins: Driver & Customer only (NO STORE LOCATION)
     final driverMarker = Marker(
       markerId: const MarkerId('driver_pin'),
       position: driverLoc,
       icon: _driverIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-      infoWindow: const InfoWindow(title: 'Driver (You)', snippet: 'Current Live GPS'),
+      infoWindow: const InfoWindow(title: 'Driver (You)'),
       zIndexInt: 3,
     );
 
@@ -82,7 +108,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
       icon: _customerIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
       infoWindow: InfoWindow(
         title: 'Customer Destination',
-        snippet: controller.activeOrder.value?.deliveryAddress ?? 'Customer Address',
+        snippet: order?.deliveryAddress ?? 'Customer Address',
       ),
       zIndexInt: 2,
     );
@@ -92,7 +118,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
       polylineId: const PolylineId('driver_road_outer'),
       points: roadPath,
       color: const Color(0xFF92400E),
-      width: 8,
+      width: 7,
       jointType: JointType.round,
       startCap: Cap.roundCap,
       endCap: Cap.roundCap,
@@ -102,7 +128,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
       polylineId: const PolylineId('driver_road_inner'),
       points: roadPath,
       color: const Color(0xFFF59E0B),
-      width: 5,
+      width: 4,
       jointType: JointType.round,
       startCap: Cap.roundCap,
       endCap: Cap.roundCap,
@@ -115,7 +141,28 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
         _polylines[outerPolyline.polylineId] = outerPolyline;
         _polylines[innerPolyline.polylineId] = innerPolyline;
       });
+      _fitMapBounds(driverLoc, customerLoc);
     }
+  }
+
+  void _fitMapBounds(LatLng p1, LatLng p2) {
+    if (_mapController == null) return;
+    try {
+      final southwest = LatLng(
+        p1.latitude < p2.latitude ? p1.latitude : p2.latitude,
+        p1.longitude < p2.longitude ? p1.longitude : p2.longitude,
+      );
+      final northeast = LatLng(
+        p1.latitude > p2.latitude ? p1.latitude : p2.latitude,
+        p1.longitude > p2.longitude ? p1.longitude : p2.longitude,
+      );
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngBounds(
+          LatLngBounds(southwest: southwest, northeast: northeast),
+          75,
+        ),
+      );
+    } catch (_) {}
   }
 
   void _centerOnDriver() {
@@ -197,7 +244,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Turn right onto Maple St',
+                            'Head towards customer',
                             style: GoogleFonts.inter(
                               fontSize: 15.sp,
                               fontWeight: FontWeight.w800,
@@ -206,7 +253,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                           ),
                           SizedBox(height: 2.h),
                           Text(
-                            'In 200m · Customer on left side',
+                            '${_routeDistanceKm.toStringAsFixed(1)} km · $_routeEtaMins mins remaining',
                             style: GoogleFonts.inter(
                               fontSize: 12.sp,
                               color: const Color(0xFF6B7280),
@@ -234,7 +281,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                           ),
                           SizedBox(width: 4.w),
                           Text(
-                            'GPS 5s',
+                            'GPS LIVE',
                             style: GoogleFonts.inter(
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
@@ -310,7 +357,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '7 mins (2.1 km)',
+                                  '$_routeEtaMins mins (${_routeDistanceKm.toStringAsFixed(1)} km)',
                                   style: GoogleFonts.inter(
                                     fontSize: 17.sp,
                                     fontWeight: FontWeight.w800,
@@ -335,7 +382,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Text(
-                              'Collect: \$${order.totalCashToCollect.toStringAsFixed(2)}',
+                              'Collect: \$\${order.totalCashToCollect.toStringAsFixed(2)}',
                               style: GoogleFonts.inter(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w700,

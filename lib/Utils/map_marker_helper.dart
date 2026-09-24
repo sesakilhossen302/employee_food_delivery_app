@@ -128,4 +128,79 @@ class MapMarkerHelper {
 
     return BitmapDescriptor.bytes(bytes);
   }
+
+  /// Generates a sleek, modern compact circular pin icon (Zero text, small clean circle with pin pointer)
+  static Future<BitmapDescriptor> createCircularMarker({
+    required IconData icon,
+    required Color primaryColor,
+    Color iconColor = Colors.white,
+    double diameter = 48.0,
+  }) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+
+    final double width = diameter;
+    final double height = diameter + 8.0;
+    final double radius = diameter / 2;
+
+    // 1. Drop Shadow
+    final Path shadowPath = Path()
+      ..addOval(Rect.fromCircle(center: Offset(radius, radius + 2), radius: radius - 2));
+    canvas.drawShadow(shadowPath, Colors.black, 4.0, true);
+
+    // 2. White Outer Border
+    final Paint rimPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(radius, radius), radius, rimPaint);
+
+    // 3. Inner Colored Circle
+    final Paint bgPaint = Paint()
+      ..color = primaryColor
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(radius, radius), radius - 3.0, bgPaint);
+
+    // 4. Downward Pin Pointer / Tail
+    final Path pointerPath = Path();
+    pointerPath.moveTo(radius - 5, diameter - 3);
+    pointerPath.lineTo(radius, height);
+    pointerPath.lineTo(radius + 5, diameter - 3);
+    pointerPath.close();
+    canvas.drawPath(pointerPath, bgPaint);
+
+    final Paint pointerBorder = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawPath(pointerPath, pointerBorder);
+
+    // 5. Draw Icon in Center
+    final TextPainter iconPainter = TextPainter(textDirection: TextDirection.ltr);
+    iconPainter.text = TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        fontSize: diameter * 0.46,
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        color: iconColor,
+      ),
+    );
+    iconPainter.layout();
+    iconPainter.paint(
+      canvas,
+      Offset(
+        radius - (iconPainter.width / 2),
+        radius - (iconPainter.height / 2),
+      ),
+    );
+
+    final ui.Image image = await pictureRecorder.endRecording().toImage(
+      width.toInt(),
+      height.toInt(),
+    );
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    final bytes = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.bytes(bytes);
+  }
 }

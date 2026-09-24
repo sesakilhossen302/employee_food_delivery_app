@@ -4,9 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../../../Core/AppRoute/app_route.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import '../../../../service/api_client.dart';
 import '../../../../service/api_url.dart';
+import '../../Profile/Controller/profile_controller.dart';
 import '../Home/Controller/employee_home_controller.dart';
 import '../Nav/Controller/employee_nav_controller.dart';
 import '../Orders/Controller/employee_orders_controller.dart';
@@ -24,11 +27,78 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
 
   final TextEditingController nameController = TextEditingController(text: 'Customer');
   final TextEditingController phoneController = TextEditingController(text: '(555) 123-4567');
-  final TextEditingController streetController =
-      TextEditingController(text: '123 Maple St, Springfield, S4P 3Y2');
-  final TextEditingController zipController = TextEditingController(text: 'S4P 3Y2');
-  final TextEditingController instructionsController =
-      TextEditingController(text: 'e.g. Ring bell, leave at door');
+  final TextEditingController streetController = TextEditingController();
+  final TextEditingController zipController = TextEditingController();
+  final TextEditingController instructionsController = TextEditingController();
+
+  final ProfileController profileController = Get.isRegistered<ProfileController>()
+      ? Get.find<ProfileController>()
+      : Get.put(ProfileController());
+
+  SavedAddressModel? selectedAddress;
+  double deliveryLat = 23.8103;
+  double deliveryLng = 90.4125;
+  bool isDetectingGps = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAddressData();
+  }
+
+  Future<void> _initAddressData() async {
+    await profileController.loadAddresses();
+    if (profileController.addresses.isNotEmpty) {
+      final addr = profileController.addresses.firstWhereOrNull((a) => a.isDefault) ??
+          profileController.addresses.first;
+      _selectAddress(addr);
+    } else {
+      _detectCurrentLocation();
+    }
+  }
+
+  void _selectAddress(SavedAddressModel addr) {
+    setState(() {
+      selectedAddress = addr;
+      streetController.text = addr.address;
+      if (addr.note.isNotEmpty) {
+        instructionsController.text = addr.note;
+      }
+      if (addr.lat != null && addr.lng != null) {
+        deliveryLat = addr.lat!;
+        deliveryLng = addr.lng!;
+      }
+    });
+  }
+
+  Future<void> _detectCurrentLocation() async {
+    try {
+      setState(() => isDetectingGps = true);
+      final hasPermission = await Geolocator.isLocationServiceEnabled();
+      if (hasPermission) {
+        var perm = await Geolocator.checkPermission();
+        if (perm == LocationPermission.denied) {
+          perm = await Geolocator.requestPermission();
+        }
+        if (perm == LocationPermission.whileInUse || perm == LocationPermission.always) {
+          final pos = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
+          if (mounted) {
+            setState(() {
+              deliveryLat = pos.latitude;
+              deliveryLng = pos.longitude;
+              if (streetController.text.isEmpty) {
+                streetController.text = 'Location (${pos.latitude.toStringAsFixed(4)}, ${pos.longitude.toStringAsFixed(4)})';
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Checkout GPS note: $e');
+    } finally {
+      if (mounted) setState(() => isDetectingGps = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -41,17 +111,6 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
   }
 
   @override
-  
-  double _parseCoord(String text, int index, double fallback) {
-    if (text.contains(',')) {
-      final parts = text.split(',');
-      if (parts.length == 2) {
-        return double.tryParse(parts[index].trim()) ?? fallback;
-      }
-    }
-    return fallback;
-  }
-  
   Widget build(BuildContext context) {
     final controller = Get.find<EmployeeHomeController>();
 
@@ -309,25 +368,172 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Delivery Address',
-            style: GoogleFonts.inter(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF111827),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Delivery Address',
+                style: GoogleFonts.inter(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+              if (isDetectingGps)
+                Row(
+                  children: [
+                    SizedBox(width: 12.w, height: 12.w, child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryAmber)),
+                    SizedBox(width: 6.w),
+                    Text('Detecting GPS...', style: GoogleFonts.inter(fontSize: 10.sp, color: const Color(0xFF9CA3AF))),
+                  ],
+                ),
+            ],
           ),
           SizedBox(height: 12.h),
-          _buildFieldLabel('Street Address'),
+
+          // 1. Saved Addresses List (Cards)
+          Obx(() {
+            final addrs = profileController.addresses;
+            if (addrs.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...addrs.map((addr) {
+                  final isSelected = selectedAddress?.id == addr.id;
+                  return GestureDetector(
+                    onTap: () => _selectAddress(addr),
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 10.h),
+                      padding: EdgeInsets.all(12.w),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFFEF3C7).withValues(alpha: 0.3) : Colors.white,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: isSelected ? AppColors.primaryAmber : const Color(0xFFE5E7EB),
+                          width: isSelected ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded,
+                            color: isSelected ? AppColors.primaryAmber : const Color(0xFF9CA3AF),
+                            size: 20.sp,
+                          ),
+                          SizedBox(width: 10.w),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      addr.title,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    if (addr.isDefault) ...[
+                                      SizedBox(width: 6.w),
+                                      Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 1.h),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF3C7),
+                                          borderRadius: BorderRadius.circular(4.r),
+                                        ),
+                                        child: Text(
+                                          'Default',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 9.sp,
+                                            fontWeight: FontWeight.w700,
+                                            color: const Color(0xFFD97706),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                SizedBox(height: 2.h),
+                                Text(
+                                  addr.address,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.sp,
+                                    color: const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            );
+          }),
+
+          // 2. Add New Address / Location via Map button
+          SizedBox(
+            width: double.infinity,
+            height: 44.h,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final result = await Get.toNamed(AppRoute.locationPickerScreen);
+                if (result != null && result is Map) {
+                  setState(() {
+                    if (result['lat'] != null && result['lng'] != null) {
+                      deliveryLat = (result['lat'] as num).toDouble();
+                      deliveryLng = (result['lng'] as num).toDouble();
+                    }
+                    if (result['address'] != null) {
+                      streetController.text = result['address'].toString();
+                    }
+                    if (result['instructions'] != null && result['instructions'].toString().isNotEmpty) {
+                      instructionsController.text = result['instructions'].toString();
+                    }
+                    selectedAddress = SavedAddressModel(
+                      id: 'NEW-${DateTime.now().millisecondsSinceEpoch}',
+                      title: result['title']?.toString() ?? 'Selected Location',
+                      address: streetController.text,
+                      note: instructionsController.text,
+                      lat: deliveryLat,
+                      lng: deliveryLng,
+                      isDefault: false,
+                    );
+                  });
+                }
+              },
+              icon: const Icon(Icons.add_location_alt_outlined, color: AppColors.primaryAmber, size: 18),
+              label: Text(
+                'Add New Location on Map',
+                style: GoogleFonts.inter(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryAmber,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primaryAmber, width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+              ),
+            ),
+          ),
+          SizedBox(height: 14.h),
+
+          _buildFieldLabel('Selected Address'),
           SizedBox(height: 6.h),
           _buildCustomTextField(
             streetController,
             prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF9CA3AF), size: 18),
           ),
-          SizedBox(height: 12.h),
-          _buildFieldLabel('Postal / ZIP Code'),
-          SizedBox(height: 6.h),
-          _buildCustomTextField(zipController),
           SizedBox(height: 10.h),
 
           /// Green Valid Area Badge
@@ -343,7 +549,7 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
                 const Icon(Icons.check, size: 14, color: Color(0xFF059669)),
                 SizedBox(width: 6.w),
                 Text(
-                  'Address is within delivery area (0–5 km)',
+                  'Address is within delivery area',
                   style: GoogleFonts.inter(
                     color: const Color(0xFF059669),
                     fontSize: 11.sp,
@@ -643,9 +849,9 @@ class _EmployeeCheckoutScreenState extends State<EmployeeCheckoutScreen> {
           "phone": phoneController.text.trim().isNotEmpty ? phoneController.text.trim() : "+1 (555) 123-4567",
           "address": isDelivery ? streetController.text.trim() : "QuickStop Gas Station, 1250 Highway Blvd",
           "instructions": instructionsController.text.trim(),
-          "distanceKm": 3.2,
-            "lat": 46.8920,
-            "lng": -96.8050,
+          "distanceKm": 2.5,
+          "lat": deliveryLat,
+          "lng": deliveryLng,
         },
         "fulfillmentType": isDelivery ? "delivery" : "pickup",
         "items": controller.cartItems.map((entry) => {
