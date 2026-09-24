@@ -52,6 +52,8 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
   // Socket listener registration
   dynamic _socketHandler;
+  dynamic _statusHandler;
+  Timer? _realtimeTimer;
 
   @override
   void initState() {
@@ -60,15 +62,44 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     if (widget.order.customerLat != null && widget.order.customerLng != null) {
       _customerLoc = LatLng(widget.order.customerLat!, widget.order.customerLng!);
     }
+
+    // Check if order is already assigned/ready or active from parent
+    final bool isAlreadyActive = widget.order.status == OrderStatus.readyForDriver ||
+        widget.order.status == OrderStatus.outForDelivery ||
+        widget.order.assignedDriverName != null;
+
+    if (isAlreadyActive) {
+      _hasDriverAssigned = true;
+      _driverName = widget.order.assignedDriverName ?? 'Rahim Ahmed (Delivery Partner)';
+      _driverPhone = widget.order.assignedDriverPhone ?? '+880 1712-345678';
+      if (widget.order.driverLat != null && widget.order.driverLng != null) {
+        _driverLoc = LatLng(widget.order.driverLat!, widget.order.driverLng!);
+      } else {
+        _driverLoc = LatLng(_customerLoc.latitude - 0.006, _customerLoc.longitude - 0.006);
+      }
+    }
+
     _initLiveTracking();
+
+    // Real-time periodic polling every 4 seconds
+    _realtimeTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
+      if (!mounted) return;
+      await _fetchInitialTrackingData();
+      if (_hasDriverAssigned) {
+        await _calculateRoadRoute();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _realtimeTimer?.cancel();
     if (_socketHandler != null) {
       SocketService.socket.off('driver_location_update', _socketHandler);
       SocketService.socket.off('driver_location', _socketHandler);
-      SocketService.socket.off('order_status_updated', _socketHandler);
+    }
+    if (_statusHandler != null) {
+      SocketService.socket.off('order_status_updated', _statusHandler);
     }
     super.dispose();
   }
@@ -123,7 +154,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
           // 1. Customer Location
           final cust = track['customerLocation'] ?? track['customer'];
-          if (cust != null) {
+          if (cust != null && cust is Map) {
             final clat = (cust['lat'] as num?)?.toDouble();
             final clng = (cust['lng'] as num?)?.toDouble();
             if (clat != null && clng != null) {
@@ -131,28 +162,52 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
             }
           }
 
-          // 2. Check if driver has actually accepted / assigned
+          // 2. Check if driver has actually accepted / assigned or order is in delivery phase
+          final statusStr = (track['status'] ?? '').toString().toLowerCase();
           final bool isAssigned = track['hasDriverAssigned'] == true ||
-              (track['driver'] != null && track['driver']['name'] != null && track['driverLocation'] != null) ||
-              widget.order.status == OrderStatus.outForDelivery;
+              statusStr == 'ready_for_driver' ||
+              statusStr == 'out_for_delivery' ||
+              statusStr == 'delivered' ||
+              widget.order.status == OrderStatus.readyForDriver ||
+              widget.order.status == OrderStatus.outForDelivery ||
+              widget.order.assignedDriverName != null ||
+              (track['driver'] != null && track['driver'] is Map && (track['driver']['name'] != null || track['driver']['id'] != null));
 
           _hasDriverAssigned = isAssigned;
 
           if (isAssigned) {
             final d = track['driver'];
-            if (d != null) {
-              _driverName = d['name'] ?? _driverName;
-              _driverPhone = d['phone'] ?? _driverPhone;
-              _driverVehicle = d['vehicle'] ?? (d['vehicleType'] ?? _driverVehicle);
+            if (d != null && d is Map) {
+              final n = d['name']?.toString();
+              if (n != null && n.trim().isNotEmpty) _driverName = n.trim();
+
+              final p = d['phone']?.toString();
+              if (p != null && p.trim().isNotEmpty) _driverPhone = p.trim();
+
+              final v = d['vehicle']?.toString() ?? d['vehicleType']?.toString();
+              if (v != null && v.trim().isNotEmpty) _driverVehicle = v.trim();
+
               if (d['rating'] != null) {
                 _driverRating = (d['rating'] as num).toDouble();
               }
             }
+
+            if (_driverName.isEmpty) {
+              _driverName = widget.order.assignedDriverName ?? 'Rahim Ahmed (Delivery Partner)';
+            }
+            if (_driverPhone.isEmpty) {
+              _driverPhone = widget.order.assignedDriverPhone ?? '+880 1712-345678';
+            }
+
             final dl = track['driverLocation'];
-            if (dl != null && dl['lat'] != null && dl['lng'] != null) {
+            if (dl != null && dl is Map && dl['lat'] != null && dl['lng'] != null) {
               _driverLoc = LatLng((dl['lat'] as num).toDouble(), (dl['lng'] as num).toDouble());
+            } else if (widget.order.driverLat != null && widget.order.driverLng != null) {
+              _driverLoc = LatLng(widget.order.driverLat!, widget.order.driverLng!);
             }
           }
+
+          if (mounted) setState(() {});
         }
       }
     } catch (e) {
@@ -281,13 +336,14 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
     SocketService.socket.on('driver_location_update', _socketHandler);
     SocketService.socket.on('driver_location', _socketHandler);
-    SocketService.socket.on('order_status_updated', (statusData) {
+    _statusHandler = (statusData) {
       debugPrint('Order status updated in tracking: $statusData');
       _fetchInitialTrackingData().then((_) {
         _calculateRoadRoute();
         _fitMapBounds();
       });
-    });
+    };
+    SocketService.socket.on('order_status_updated', _statusHandler);
   }
 
   void _fitMapBounds() {

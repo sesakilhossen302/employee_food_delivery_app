@@ -61,6 +61,8 @@ class OrderModel {
   final bool hasActiveBorder;
   final double? customerLat;
   final double? customerLng;
+  final double? driverLat;
+  final double? driverLng;
   final String? assignedDriverName;
   final String? assignedDriverPhone;
 
@@ -84,6 +86,8 @@ class OrderModel {
     this.hasActiveBorder = false,
     this.customerLat,
     this.customerLng,
+    this.driverLat,
+    this.driverLng,
     this.assignedDriverName,
     this.assignedDriverPhone,
   });
@@ -137,10 +141,20 @@ class OrderModel {
         (json['customerLocation'] is Map ? (json['customerLocation']['lng'] as num?)?.toDouble() : null);
 
     final assignedDriver = json['assignedDriver'] as Map<String, dynamic>?;
+    final driverObj = json['driver'] as Map<String, dynamic>?;
+    final driverLocation = json['driverLocation'] as Map<String, dynamic>?;
+
     final driverName = assignedDriver?['name']?.toString() ??
-        (json['driver'] is Map ? json['driver']['name']?.toString() : null);
+        driverObj?['name']?.toString();
     final driverPhone = assignedDriver?['phone']?.toString() ??
-        (json['driver'] is Map ? json['driver']['phone']?.toString() : null);
+        driverObj?['phone']?.toString();
+
+    final dLat = (driverLocation?['lat'] as num?)?.toDouble() ??
+        (assignedDriver?['lat'] as num?)?.toDouble() ??
+        (driverObj?['lat'] as num?)?.toDouble();
+    final dLng = (driverLocation?['lng'] as num?)?.toDouble() ??
+        (assignedDriver?['lng'] as num?)?.toDouble() ??
+        (driverObj?['lng'] as num?)?.toDouble();
 
     final rawItems = json['items'] as List?;
     final parsedItems = rawItems != null
@@ -171,6 +185,8 @@ class OrderModel {
       hasActiveBorder: mappedStatus != OrderStatus.delivered,
       customerLat: cLat,
       customerLng: cLng,
+      driverLat: dLat,
+      driverLng: dLng,
       assignedDriverName: driverName,
       assignedDriverPhone: driverPhone,
     );

@@ -40,9 +40,12 @@ class ApiConstant {
   static const calculatePricing = "$port/delivery/calculate-pricing";
 
   ///<=================================== Orders ====================>
-  static const createOrder = "$port/orders";
   static const orders = "$port/orders";
-  static String orderTracking(String id) => "$port/orders/$id/tracking";
+  static const createOrder = "$port/orders";
+  static String orderTracking(String id) {
+    final clean = id.replaceAll('#', '').trim();
+    return "$port/orders/$clean/tracking";
+  }
 
   ///<=================================== Driver Flow ====================>
   static const driverActiveOrders = "$port/driver/active-orders";

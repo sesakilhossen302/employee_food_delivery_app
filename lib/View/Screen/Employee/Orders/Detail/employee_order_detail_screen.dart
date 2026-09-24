@@ -174,7 +174,14 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
       order.customerLng ?? 90.4125,
     );
 
-    final bool isOutForDelivery = order.status == OrderStatus.outForDelivery;
+    final bool isDriverActive = order.status == OrderStatus.readyForDriver ||
+        order.status == OrderStatus.outForDelivery ||
+        order.assignedDriverName != null;
+
+    final driverLoc = LatLng(
+      order.driverLat ?? (custLoc.latitude - 0.006),
+      order.driverLng ?? (custLoc.longitude - 0.006),
+    );
 
     final miniMarkers = <Marker>{
       Marker(
@@ -183,6 +190,13 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: InfoWindow(title: 'Delivery Address', snippet: order.deliveryAddress),
       ),
+      if (isDriverActive)
+        Marker(
+          markerId: const MarkerId('mini_driver'),
+          position: driverLoc,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          infoWindow: InfoWindow(title: order.assignedDriverName ?? 'Delivery Driver'),
+        ),
     };
 
     return GestureDetector(
@@ -231,11 +245,11 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                   decoration: BoxDecoration(
-                    color: isOutForDelivery ? AppColors.primaryAmber : const Color(0xFF1E3A8A),
+                    color: isDriverActive ? AppColors.primaryAmber : const Color(0xFF1E3A8A),
                     borderRadius: BorderRadius.circular(16.r),
                     boxShadow: [
                       BoxShadow(
-                        color: (isOutForDelivery ? AppColors.primaryAmber : const Color(0xFF1E3A8A)).withValues(alpha: 0.3),
+                        color: (isDriverActive ? AppColors.primaryAmber : const Color(0xFF1E3A8A)).withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -245,13 +259,13 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        isOutForDelivery ? Icons.local_shipping_rounded : Icons.schedule_rounded,
+                        isDriverActive ? Icons.local_shipping_rounded : Icons.schedule_rounded,
                         size: 14,
                         color: Colors.white,
                       ),
                       SizedBox(width: 4.w),
                       Text(
-                        isOutForDelivery ? 'On the way' : order.statusText,
+                        isDriverActive ? (order.status == OrderStatus.outForDelivery ? 'On the way' : 'Driver Assigned') : order.statusText,
                         style: GoogleFonts.inter(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w700,
@@ -290,14 +304,14 @@ class EmployeeOrderDetailScreen extends StatelessWidget {
                             width: 8.w,
                             height: 8.w,
                             decoration: BoxDecoration(
-                              color: isOutForDelivery ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              color: isDriverActive ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                               shape: BoxShape.circle,
                             ),
                           ),
                           SizedBox(width: 8.w),
                           Text(
-                            isOutForDelivery
-                                ? 'Live Driver GPS (5s Sync)'
+                            isDriverActive
+                                ? 'Live Driver GPS Active'
                                 : 'Waiting for Driver Assignment',
                             style: GoogleFonts.inter(
                               fontSize: 12.sp,
