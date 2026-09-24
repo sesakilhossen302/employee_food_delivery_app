@@ -128,54 +128,47 @@ class EmployeeBrowseScreen extends StatelessWidget {
               ),
             ),
 
-            /// 2. Category Chips Horizontal Row
+            /// 2. Category Chips Horizontal Row with "All" Option & Active Highlights
             SizedBox(
-              height: 42.h,
-              child: Obx(
-                () => ListView.separated(
+              height: 44.h,
+              child: Obx(() {
+                final currentCat = homeController.selectedCategory.value.trim().toLowerCase();
+                final isAllSelected = currentCat == 'all' || currentCat.isEmpty;
+
+                return ListView(
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  itemCount: homeController.categories.length,
-                  separatorBuilder: (context, index) => SizedBox(width: 8.w),
-                  itemBuilder: (context, index) {
-                    final category = homeController.categories[index];
-                    final isSelected = homeController.selectedCategory.value.toLowerCase() ==
-                        category.name.toLowerCase();
-
-                    return GestureDetector(
+                  children: [
+                    // "All" option first
+                    _buildCategoryChip(
+                      label: 'All',
+                      emoji: '✨',
+                      isSelected: isAllSelected,
                       onTap: () {
-                        homeController.selectCategoryByName(category.name);
+                        homeController.selectCategoryByName('All');
                       },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primaryAmber : Colors.white,
-                          borderRadius: BorderRadius.circular(20.r),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primaryAmber : const Color(0xFFE5E7EB),
-                          ),
+                    ),
+                    SizedBox(width: 8.w),
+
+                    // Dynamic backend categories
+                    ...homeController.categories.map((category) {
+                      final isSelected = currentCat == category.name.trim().toLowerCase();
+                      return Padding(
+                        padding: EdgeInsets.only(right: 8.w),
+                        child: _buildCategoryChip(
+                          label: category.name,
+                          emoji: category.iconEmoji,
+                          isSelected: isSelected,
+                          onTap: () {
+                            homeController.selectCategoryByName(category.name);
+                          },
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(category.iconEmoji, style: const TextStyle(fontSize: 14)),
-                            SizedBox(width: 6.w),
-                            Text(
-                              category.name,
-                              style: GoogleFonts.inter(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w700,
-                                color: isSelected ? Colors.white : const Color(0xFF374151),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+                      );
+                    }),
+                  ],
+                );
+              }),
             ),
             SizedBox(height: 12.h),
 
@@ -184,12 +177,14 @@ class EmployeeBrowseScreen extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Obx(() {
                 final list = homeController.filteredProducts;
+                final catName = homeController.selectedCategory.value;
+                final displayCat = catName.toLowerCase() == 'all' ? 'All Categories' : catName;
                 return Text(
-                  '${list.length} product${list.length == 1 ? '' : 's'} in ${homeController.selectedCategory.value}',
+                  '${list.length} product${list.length == 1 ? '' : 's'} in $displayCat',
                   style: GoogleFonts.inter(
                     fontSize: 13.sp,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF9CA3AF),
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF6B7280),
                   ),
                 );
               }),
@@ -426,4 +421,59 @@ class EmployeeBrowseScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildCategoryChip({
+    required String label,
+    required String emoji,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryAmber : Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryAmber : const Color(0xFFE5E7EB),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryAmber.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            SizedBox(width: 6.w),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13.sp,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF374151),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }

@@ -10,7 +10,7 @@ class EmployeeHomeController extends GetxController {
   final RxInt currentNavIndex = 0.obs;
   final RxString selectedLocation = 'Current Location'.obs;
   final RxInt selectedCategoryIndex = 0.obs;
-  final RxString selectedCategory = 'Drinks'.obs;
+  final RxString selectedCategory = 'All'.obs;
   final RxString searchQuery = ''.obs;
 
   final RxBool isLoading = false.obs;
