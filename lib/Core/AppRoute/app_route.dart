@@ -183,6 +183,12 @@ class AppRoute {
       transitionDuration: const Duration(milliseconds: 250),
     ),
     GetPage(
+      name: locationPickerScreen,
+      page: () => const LocationPickerScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 250),
+    ),
+    GetPage(
       name: driverActiveDeliveryScreen,
       page: () => const DriverActiveDeliveryScreen(),
       transition: Transition.rightToLeft,

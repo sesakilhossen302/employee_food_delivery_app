@@ -1,3 +1,4 @@
+import 'location_picker_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -9,77 +10,6 @@ import '../../../../Core/AppRoute/app_route.dart';
 class MyAddressesScreen extends StatelessWidget {
   const MyAddressesScreen({super.key});
 
-  void _showAddAddressDialog(BuildContext context, ProfileController controller) {
-    final titleCtrl = TextEditingController();
-    final addressCtrl = TextEditingController();
-    final noteCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-        title: Text('Add New Address', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              decoration: InputDecoration(
-                hintText: 'Label (e.g. Home, Work, Gym)',
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-              ),
-            ),
-            SizedBox(height: 10.h),
-            TextField(
-              controller: addressCtrl,
-              maxLines: 2,
-              decoration: InputDecoration(
-                hintText: 'Street address & Springfield zone',
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-              ),
-            ),
-            SizedBox(height: 10.h),
-            TextField(
-              controller: noteCtrl,
-              decoration: InputDecoration(
-                hintText: 'Dropoff instructions (optional)',
-                filled: true,
-                fillColor: const Color(0xFFF9FAFB),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.r), borderSide: const BorderSide(color: Color(0xFFE5E7EB))),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF9CA3AF))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (titleCtrl.text.trim().isNotEmpty && addressCtrl.text.trim().isNotEmpty) {
-                controller.addAddress(
-                  title: titleCtrl.text.trim(),
-                  address: addressCtrl.text.trim(),
-                  note: noteCtrl.text.trim(),
-                );
-                Navigator.pop(ctx);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryAmber,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-            ),
-            child: Text('Save Address', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +163,10 @@ class MyAddressesScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 50.h,
                 child: OutlinedButton.icon(
-                  onPressed: () => Get.toNamed(AppRoute.locationPickerScreen),
+                  onPressed: () async {
+                    await Get.to(() => const LocationPickerScreen());
+                    controller.loadAddresses();
+                  },
                   icon: const Icon(Icons.add_rounded, color: AppColors.primaryAmber),
                   label: Text('Add New Address', style: GoogleFonts.inter(fontSize: 14.sp, fontWeight: FontWeight.w700, color: AppColors.primaryAmber)),
                   style: OutlinedButton.styleFrom(
