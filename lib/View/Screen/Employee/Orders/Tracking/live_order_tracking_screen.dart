@@ -632,14 +632,18 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  _hasDriverAssigned
-                                      ? (_driverName.isNotEmpty ? _driverName : 'Driver Assigned')
-                                      : 'Driver Not Assigned Yet',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF111827),
+                                Flexible(
+                                  child: Text(
+                                    _hasDriverAssigned
+                                        ? (_driverName.isNotEmpty ? _driverName : 'Driver Assigned')
+                                        : 'Driver Not Assigned Yet',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: const Color(0xFF111827),
+                                    ),
                                   ),
                                 ),
                                 if (_hasDriverAssigned && _driverRating > 0) ...[

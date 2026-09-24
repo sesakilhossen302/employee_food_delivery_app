@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../../../Utils/AppColors/app_colors.dart';
 import '../../../../service/api_client.dart';
 import '../../../../service/api_url.dart';
 import '../../../../service/route_service.dart';
 import '../../../../service/socket_service.dart';
+import '../../../../helper/shared_prefe/shared_prefe.dart';
 import '../Model/driver_order_model.dart';
 
 class DriverController extends GetxController {
@@ -118,19 +118,38 @@ class DriverController extends GetxController {
     activeOrder.value = order;
     currentNavIndex.value = 0; // Deliveries tab
 
+    if (order.customerLat != null && order.customerLng != null) {
+      driverLat.value = order.customerLat! - 0.007;
+      driverLng.value = order.customerLng! - 0.007;
+    }
+
+    final savedName = await SharePrefsHelper.getString('saved_user_name');
+    final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
+    final currentDriverName = savedName.isNotEmpty ? savedName : 'Delivery Driver';
+    final currentDriverPhone = savedPhone.isNotEmpty ? savedPhone : '+880 1712-345678';
+
     Fluttertoast.showToast(
       msg: 'Accepted Order ${order.id}. Head to QuickStop Gas Station for pickup!',
       backgroundColor: AppColors.primaryAmber,
       textColor: Colors.white,
     );
 
-    // Persist to backend
+    // Persist to backend with real assigned driver details
     if (order.backendId != null && order.backendId!.isNotEmpty) {
       await ApiClient.patchData(
         '${ApiConstant.orders}/${order.backendId}/status',
-        jsonEncode({'status': 'ready_for_driver'}),
+        jsonEncode({
+          'status': 'ready_for_driver',
+          'assignedDriver': {
+            'name': currentDriverName,
+            'phone': currentDriverPhone,
+            'vehicle': 'Honda Civic (Plate: QST-991)',
+            'rating': 4.9,
+          },
+        }),
       );
     }
+    _startLocationBroadcasting();
   }
 
   Future<void> confirmStorePickup() async {
@@ -146,9 +165,22 @@ class DriverController extends GetxController {
 
     final backendId = activeOrder.value!.backendId;
     if (backendId != null && backendId.isNotEmpty) {
+      final savedName = await SharePrefsHelper.getString('saved_user_name');
+      final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
+      final currentDriverName = savedName.isNotEmpty ? savedName : 'Delivery Driver';
+      final currentDriverPhone = savedPhone.isNotEmpty ? savedPhone : '+880 1712-345678';
+
       await ApiClient.patchData(
         '${ApiConstant.orders}/$backendId/status',
-        jsonEncode({'status': 'out_for_delivery'}),
+        jsonEncode({
+          'status': 'out_for_delivery',
+          'assignedDriver': {
+            'name': currentDriverName,
+            'phone': currentDriverPhone,
+            'vehicle': 'Honda Civic (Plate: QST-991)',
+            'rating': 4.9,
+          },
+        }),
       );
     }
     _startLocationBroadcasting();
@@ -198,10 +230,12 @@ class DriverController extends GetxController {
   void _startLocationBroadcasting() async {
     _stopLocationBroadcasting();
 
-    // Default QuickStop Gas Station origin
-    const origin = LatLng(46.8772, -96.7898);
-    // Customer destination
-    const destination = LatLng(46.8920, -96.8050);
+    final custLat = activeOrder.value?.customerLat ?? 23.8197;
+    final custLng = activeOrder.value?.customerLng ?? 90.4277;
+    final destination = LatLng(custLat, custLng);
+
+    // Initial driver origin: nearby in the city (0.007 away)
+    final origin = LatLng(custLat - 0.007, custLng - 0.007);
 
     // Compute real road routing
     final route = await RouteService.getRoadRoute(origin: origin, destination: destination);
@@ -211,7 +245,15 @@ class DriverController extends GetxController {
     if (route.isNotEmpty) {
       driverLat.value = route.first.latitude;
       driverLng.value = route.first.longitude;
+    } else {
+      driverLat.value = origin.latitude;
+      driverLng.value = origin.longitude;
     }
+
+    final savedName = await SharePrefsHelper.getString('saved_user_name');
+    final savedPhone = await SharePrefsHelper.getString('saved_user_phone');
+    final currentDriverName = savedName.isNotEmpty ? savedName : 'Delivery Driver';
+    final currentDriverPhone = savedPhone.isNotEmpty ? savedPhone : '+880 1712-345678';
 
     _locationTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (activeOrder.value == null) {
@@ -230,7 +272,9 @@ class DriverController extends GetxController {
       // Emit live driver location over Socket.io every 5 seconds
       try {
         final payload = {
-          'driverId': 'driver_marcus',
+          'driverId': 'driver_active',
+          'driverName': currentDriverName,
+          'driverPhone': currentDriverPhone,
           'orderId': activeOrder.value?.backendId ?? activeOrder.value?.id,
           'lat': driverLat.value,
           'lng': driverLng.value,

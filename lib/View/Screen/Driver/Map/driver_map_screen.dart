@@ -351,6 +351,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: Column(
@@ -358,8 +359,10 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                               children: [
                                 Text(
                                   '$_routeEtaMins mins (${_routeDistanceKm.toStringAsFixed(1)} km)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   style: GoogleFonts.inter(
-                                    fontSize: 17.sp,
+                                    fontSize: 16.sp,
                                     fontWeight: FontWeight.w800,
                                     color: const Color(0xFF10B981),
                                   ),
@@ -382,7 +385,7 @@ class _DriverMapScreenState extends State<DriverMapScreen> {
                               borderRadius: BorderRadius.circular(10.r),
                             ),
                             child: Text(
-                              'Collect: \$\${order.totalCashToCollect.toStringAsFixed(2)}',
+                              'Collect: \$${order.totalCashToCollect.toStringAsFixed(2)}',
                               style: GoogleFonts.inter(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w700,
