@@ -25,10 +25,13 @@ class DriverHomeScreen extends StatelessWidget {
 
             /// 2. Scrollable Body
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                child: Column(
+              child: RefreshIndicator(
+                onRefresh: () => controller.fetchDriverData(),
+                color: AppColors.primaryAmber,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// Quick Shift Stats Row
@@ -117,11 +120,12 @@ class DriverHomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDriverHeader(DriverController controller) {
     return Container(

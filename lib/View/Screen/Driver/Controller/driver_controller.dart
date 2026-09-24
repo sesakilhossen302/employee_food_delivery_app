@@ -36,6 +36,7 @@ class DriverController extends GetxController {
   RxDouble get currentLongitude => driverLng;
 
   Timer? _locationTimer;
+  Timer? _ordersPollingTimer;
   StreamSubscription<Position>? _positionStreamSub;
 
   @override
@@ -47,6 +48,10 @@ class DriverController extends GetxController {
     fetchDriverData();
     // 3. Setup Sockets
     _initSocket();
+    // 4. Polling timer to refresh available orders periodically every 5 seconds in background
+    _ordersPollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      fetchDriverData(silent: true);
+    });
   }
 
   /// Request Location Permission & Acquire Real GPS Position
@@ -88,11 +93,19 @@ class DriverController extends GetxController {
     try {
       SocketService.socket.on('order_status_updated', (data) {
         debugPrint('DriverController socket order_status_updated: $data');
-        fetchDriverData();
+        fetchDriverData(silent: true);
       });
       SocketService.socket.on('new_order', (data) {
         debugPrint('DriverController socket new_order: $data');
-        fetchDriverData();
+        fetchDriverData(silent: true);
+      });
+      SocketService.socket.on('new_order_available', (data) {
+        debugPrint('DriverController socket new_order_available: $data');
+        fetchDriverData(silent: true);
+      });
+      SocketService.socket.on('order_created', (data) {
+        debugPrint('DriverController socket order_created: $data');
+        fetchDriverData(silent: true);
       });
     } catch (e) {
       debugPrint('DriverController socket warning: $e');
@@ -114,8 +127,8 @@ class DriverController extends GetxController {
     );
   }
 
-  Future<void> fetchDriverData() async {
-    isLoading.value = true;
+  Future<void> fetchDriverData({bool silent = false}) async {
+    if (!silent) isLoading.value = true;
     try {
       // 1. Fetch live driver stats from backend
       final statsRes = await ApiClient.getData(ApiConstant.driverStats);
@@ -149,7 +162,7 @@ class DriverController extends GetxController {
     } catch (e) {
       debugPrint('DriverController fetchDriverData error: $e');
     } finally {
-      isLoading.value = false;
+      if (!silent) isLoading.value = false;
     }
   }
 
@@ -343,6 +356,8 @@ class DriverController extends GetxController {
 
   @override
   void onClose() {
+    _ordersPollingTimer?.cancel();
+    _ordersPollingTimer = null;
     _stopLocationBroadcasting();
     super.onClose();
   }
